@@ -13,3 +13,10 @@ The backend is a KNN classifier -> built primarily by Sam that classifies user i
 The front end functions -> built primarily by Ellie allow the user access to functionality in a way that makes sense to the user  
 
 The testing suite -> built primarily by Dani ensures that everything is working as it should
+
+# Image Guidelines
+
+Please use the following guidelines for user images to ensure maximum accuracy. 
+- .png or .jpg filetype only
+- images should be square (1:1 aspect ratio). Non-square images will be cropped/resized
+- Only one target per image for maximum effectiveness. Target should be approximately centered in image. 
