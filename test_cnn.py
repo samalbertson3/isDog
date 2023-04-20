@@ -8,6 +8,7 @@ from PIL import Image
 input_shape = (224, 224, 3)
 
 
+# test
 def train_model(input_shape):
     # Load the Stanford Dogs dataset
     print("Loading dogs...")
