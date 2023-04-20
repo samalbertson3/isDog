@@ -74,4 +74,4 @@ def train_model():
     history = model.fit(dataset, epochs=10)
 
     print("Done!")
-    return None
+    return model
