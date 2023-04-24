@@ -3,12 +3,65 @@ from tensorflow.keras import layers, models, regularizers
 import tensorflow_datasets as tfds
 import numpy as np
 from PIL import Image
+from sklearn.model_selection import KFold
+
 
 # Define the input size of the images
 input_shape = (224, 224, 3)
 
 
-# test
+def kfold_crossval(k_folds=5, dataset, num_epochs = 5):
+    # Create a list to store the history objects from each fold
+    histories = []
+    dataset_size = len(dataset)
+    # Generate array of indices, shuffle and split them into k parts
+    indices = np.arange(dataset_size)
+    np.random.shuffle(indices)
+    splits = np.array_split(indices, k_folds)
+    # Perform K-fold cross-validation
+    for i in range(k_folds):
+        # Get the training and validation sets for this fold
+        val_indices = splits[i]
+        train_indices = np.concatenate(splits[:i] + splits[i + 1 :])
+
+        val_dataset = dataset.take(val_indices)
+        train_dataset = dataset.take(train_indices)
+
+        # Train the model on the training set
+        model.fit(train_dataset, epochs=5)
+
+        # Evaluate the model on the validation set
+        val_loss, val_acc = model.evaluate(val_dataset)
+        print(
+            "Fold {}: Validation Loss = {}, Validation Accuracy = {}".format(
+                i + 1, val_loss, val_acc
+            )
+        )
+        val_losses = []
+        val_accs = []
+
+    for i in range(k_folds):
+        val_indices = splits[i]
+        train_indices = np.concatenate(splits[:i] + splits[i + 1 :])
+
+        val_dataset = dataset.take(val_indices)
+        train_dataset = dataset.take(train_indices)
+
+        # Train the model on the training set
+        model.fit(train_dataset, epochs=num_epochs)
+
+        # Evaluate the model on the validation set
+        val_loss, val_acc = model.evaluate(val_dataset)
+        val_losses.append(val_loss)
+        val_accs.append(val_acc)
+
+    print(
+        "Mean Validation Loss = {}, Mean Validation Accuracy = {}".format(
+            np.mean(val_losses), np.mean(val_accs)
+        )
+    )
+
+
 def train_model(input_shape):
     # Load the Stanford Dogs dataset
     print("Loading dogs...")
@@ -46,6 +99,9 @@ def train_model(input_shape):
 
     # Shuffle and batch the dataset
     dataset = dataset.shuffle(1024).batch(32).prefetch(tf.data.AUTOTUNE)
+    
+    #added crossval step to building model 
+    kfold_crossval(k_folds=5, dataset, num_epochs = 5)
 
     print("Building model...")
     # Create the model
@@ -90,7 +146,7 @@ def train_model(input_shape):
     model.compile(optimizer="adam", loss="binary_crossentropy", metrics=["accuracy"])
 
     # Train the model
-    history = model.fit(dataset, epochs=10)
+    history = model.fit(dataset, epochs=5)
 
     print("Done!")
     return model
@@ -123,9 +179,9 @@ def predict_image_class(image_path, model):
 
 
 model = train_model(input_shape)
-print(predict_image_class("C:/Users/Sam/Desktop/dog.jpg", model))
-print(predict_image_class("C:/Users/Sam/Desktop/dog2.jpg", model))
-print(predict_image_class("C:/Users/Sam/Desktop/dog3.jpg", model))
-print(predict_image_class("C:/Users/Sam/Desktop/non-dog.jpg", model))
-print(predict_image_class("C:/Users/Sam/Desktop/non-dog2.jpg", model))
-print(predict_image_class("C:/Users/Sam/Desktop/non-dog3.jpg", model))
+# print(predict_image_class("C:/Users/Sam/Desktop/dog.jpg", model))
+# print(predict_image_class("C:/Users/Sam/Desktop/dog2.jpg", model))
+# print(predict_image_class("C:/Users/Sam/Desktop/dog3.jpg", model))
+# print(predict_image_class("C:/Users/Sam/Desktop/non-dog.jpg", model))
+# print(predict_image_class("C:/Users/Sam/Desktop/non-dog2.jpg", model))
+# print(predict_image_class("C:/Users/Sam/Desktop/non-dog3.jpg", model))
