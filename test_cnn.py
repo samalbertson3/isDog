@@ -28,7 +28,7 @@ def kfold_crossval(dataset, k_folds=5, num_epochs=5):
         train_dataset = dataset.take(train_indices)
 
         # Train the model on the training set
-        model.fit(train_dataset, epochs=5)
+        model.fit(train_dataset, epochs=num_epochs)
 
         # Evaluate the model on the validation set
         val_loss, val_acc = model.evaluate(val_dataset)
