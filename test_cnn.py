@@ -10,7 +10,7 @@ from sklearn.model_selection import KFold
 input_shape = (224, 224, 3)
 
 
-def kfold_crossval(k_folds=5, dataset, num_epochs = 5):
+def kfold_crossval(dataset, k_folds=5, num_epochs=5):
     # Create a list to store the history objects from each fold
     histories = []
     dataset_size = len(dataset)
@@ -99,9 +99,9 @@ def train_model(input_shape):
 
     # Shuffle and batch the dataset
     dataset = dataset.shuffle(1024).batch(32).prefetch(tf.data.AUTOTUNE)
-    
-    #added crossval step to building model 
-    kfold_crossval(k_folds=5, dataset, num_epochs = 5)
+
+    # added crossval step to building model
+    kfold_crossval(dataset, k_folds=5, num_epochs=5)
 
     print("Building model...")
     # Create the model
