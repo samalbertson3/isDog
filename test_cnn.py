@@ -4,13 +4,15 @@ import tensorflow_datasets as tfds
 import numpy as np
 from PIL import Image
 from sklearn.model_selection import KFold
+import math
+import pdb
 
 
 # Define the input size of the images
 input_shape = (224, 224, 3)
 
 
-def kfold_crossval(model, k_folds=2, num_epochs=1, num_lamby=2):
+def kfold_crossval(k_folds=2, num_epochs=1, num_lamby=2):
     dogs_ds, non_dogs_ds = create_training_data()
     # make a vector of lambdas -> interate through lambdas, train model k tims
     lambs = np.logspace(-1, 7, num=num_lamby)
@@ -18,46 +20,69 @@ def kfold_crossval(model, k_folds=2, num_epochs=1, num_lamby=2):
     # Create a list to store the history objects from each fold
     histories = []
     dataset_size = 1000
+    size = math.floor(dataset_size / k_folds)
+    val_size = math.floor(size / 2)
+    train_size = size - val_size
     # Generate array of indices, shuffle and split them into k parts
-    dog_indices = np.arange(dataset_size)
-    nd_indices = np.arange(dataset_size)
-    np.random.shuffle(dog_indices)
-    np.random.shuffle(nd_indices)
-    dog_splits = np.array_split(dog_indices, k_folds)
-    nd_splits = np.array_split(nd_indices, k_folds)
+    # dog_indices = np.arange(dataset_size)
+    # nd_indices = np.arange(dataset_size)
+    # np.random.shuffle(dog_indices)
+    # np.random.shuffle(nd_indices)
+    # dog_splits = np.array_split(dog_indices, k_folds)
+    # nd_splits = np.array_split(nd_indices, k_folds)
+    dogs_shuffle = dogs_ds.shuffle(10000, seed=123)
+    nd_shuffle = non_dogs_ds.shuffle(10000, seed=456)
 
-    # Preprocess the dog images
-    dogs_ds = dogs_ds.map(
-        lambda x: (tf.image.resize(x["image"], (224, 224)), tf.constant(1))
-    )
-
-    # Preprocess the non-dog images
-    non_dogs_ds = non_dogs_ds.map(
-        lambda x: (tf.image.resize(x["image"], (224, 224)), tf.constant(0))
-    )
+    dog_window = dogs_shuffle.window(size)
+    nd_window = nd_shuffle.window(size)
 
     out_lambda = []
     out_loss = []
     for lamby in lambs:
         out_lambda.append(lamby)
         # Perform K-fold cross-validation
-        for i in range(k_folds):
+        for i in np.arange(k_folds):
+            dogs = dog_window.skip(i)
+            dog = dogs.take(1)
+            nds = nd_window.skip(i)
+            nd = nds.take(1)
+            dog_train = dog.take(train_size)
+            dog_val = dog.skip(train_size)
+
+            nd_train = nd.take(train_size)
+            nd_val = nd.skip(train_size)
+
             # Get the training and validation sets for this fold
-            dog_val_indices = dog_splits[i]
-            dog_train_indices = np.concatenate(dog_splits[:i] + dog_splits[i + 1 :])
+            # dog_val_indices = dog_splits[i]
+            # dog_train_indices = np.concatenate(dog_splits[:i] + dog_splits[i + 1 :])
+            # dog_val_dataset = tf.gather(dogs_ds, dog_val_indices)
+            # dog_train_dataset = tf.gather(dogs_ds, dog_train_indices)
 
-            dog_val_dataset = dogs_ds.take(dog_val_indices)
-            dog_train_dataset = dogs_ds.take(dog_train_indices)
+            # nd_val_indices = nd_splits[i]
+            # nd_train_indices = np.concatenate(nd_splits[:i] + nd_splits[i + 1 :])
 
-            nd_val_indices = nd_splits[i]
-            nd_train_indices = np.concatenate(nd_splits[:i] + nd_splits[i + 1 :])
+            # nd_val_dataset = tf.gather(non_dogs_ds, nd_val_indices)
+            # nd_train_dataset = tf.gather(non_dogs_ds, nd_train_indices)
 
-            nd_val_dataset = non_dogs_ds.take(nd_val_indices)
-            nd_train_dataset = non_dogs_ds.take(nd_train_indices)
+            # Preprocess the dog images
+            dog_train = dog_train.map(
+                lambda x: (tf.image.resize(x["image"], (224, 224)), tf.constant(1))
+            )
+            dog_val = dog_val.map(
+                lambda x: (tf.image.resize(x["image"], (224, 224)), tf.constant(1))
+            )
 
-            # Concatenate the dog and non-dog datasets
-            val_dataset = dog_val_dataset.concatenate(nd_val_dataset)
-            train_dataset = dog_train_dataset.concatenate(nd_train_dataset)
+            # Preprocess the non-dog images
+            nd_train = nd_train.map(
+                lambda x: (tf.image.resize(x["image"], (224, 224)), tf.constant(0))
+            )
+            nd_val = nd_val.map(
+                lambda x: (tf.image.resize(x["image"], (224, 224)), tf.constant(0))
+            )
+
+            # # Concatenate the dog and non-dog datasets
+            val_dataset = dog_val.concatenate(nd_val)
+            train_dataset = dog_train.concatenate(nd_train)
 
             # Train the model on the training set
             # call train model
@@ -86,11 +111,15 @@ def create_training_data():
     # does first 3 sections of train model function
     # Load the Stanford Dogs dataset
     print("Loading dogs...")
-    dogs_ds, dogs_info = tfds.load("stanford_dogs", with_info=True)
+    dogs_ds, dogs_info = tfds.load(
+        "stanford_dogs", with_info=True, split="train[:100%]"
+    )
 
     print("Loading non-dogs...")
     # Load the Caltech 101 dataset
-    non_dogs_ds, non_dogs_info = tfds.load("caltech101", with_info=True)
+    non_dogs_ds, non_dogs_info = tfds.load(
+        "caltech101", with_info=True, split="train[:100%]"
+    )
 
     print("Subsetting data...")
     # Subset both datasets
@@ -183,10 +212,11 @@ def predict_image_class(image_path, model):
     return predicted_class, raw_prediction
 
 
-model = train_model(input_shape)
+# model = train_model(input_shape)
 # print(predict_image_class("C:/Users/Sam/Desktop/dog.jpg", model))
 # print(predict_image_class("C:/Users/Sam/Desktop/dog2.jpg", model))
 # print(predict_image_class("C:/Users/Sam/Desktop/dog3.jpg", model))
 # print(predict_image_class("C:/Users/Sam/Desktop/non-dog.jpg", model))
 # print(predict_image_class("C:/Users/Sam/Desktop/non-dog2.jpg", model))
 # print(predict_image_class("C:/Users/Sam/Desktop/non-dog3.jpg", model))
+lamb_out, cv_out = kfold_crossval(2, 1, 2)
