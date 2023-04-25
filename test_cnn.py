@@ -10,59 +10,51 @@ from sklearn.model_selection import KFold
 input_shape = (224, 224, 3)
 
 
-def kfold_crossval(dataset, k_folds=5, num_epochs=5):
+def kfold_crossval(model, dataset, k_folds=5, num_epochs=5, num_lamby):
+    #make a vector of lambdas -> interate through lambdas, train model k tims
+    print("Beginning CrossValidation")
     # Create a list to store the history objects from each fold
     histories = []
-    dataset_size = len(dataset)
+    dataset_size = 1000
     # Generate array of indices, shuffle and split them into k parts
-    indices = np.arange(dataset_size)
-    np.random.shuffle(indices)
+    dog_indices = np.arange(dataset_size)
+    nd_indices = np.arange(dataset_size)
+    np.random.shuffle(dog_indices)
+    np.random.shuffle(nd_indices)
     splits = np.array_split(indices, k_folds)
-    # Perform K-fold cross-validation
-    for i in range(k_folds):
-        # Get the training and validation sets for this fold
-        val_indices = splits[i]
-        train_indices = np.concatenate(splits[:i] + splits[i + 1 :])
+    for lamby in lambs:
+    
+        # Perform K-fold cross-validation
+        for i in range(k_folds):
+            # Get the training and validation sets for this fold
+            val_indices = splits[i]
+            train_indices = np.concatenate(splits[:i] + splits[i + 1 :])
 
-        val_dataset = dataset.take(val_indices)
-        train_dataset = dataset.take(train_indices)
+            val_dataset = dataset.take(val_indices)
+            train_dataset = dataset.take(train_indices)
 
-        # Train the model on the training set
-        model.fit(train_dataset, epochs=num_epochs)
+            # Train the model on the training set
+            # call train model
+            model = train_model(input_shape, lamby)
+            # don't need model.fit(train_dataset, epochs=num_epochs)
 
-        # Evaluate the model on the validation set
-        val_loss, val_acc = model.evaluate(val_dataset)
-        print(
-            "Fold {}: Validation Loss = {}, Validation Accuracy = {}".format(
-                i + 1, val_loss, val_acc
+            # Evaluate the model on the validation set
+            val_loss, val_acc = model.evaluate(val_dataset)
+            print(
+                "Fold {}: Validation Loss = {}, Validation Accuracy = {}".format(
+                    i + 1, val_loss, val_acc
+                )
             )
-        )
         val_losses = []
         val_accs = []
-
-    for i in range(k_folds):
-        val_indices = splits[i]
-        train_indices = np.concatenate(splits[:i] + splits[i + 1 :])
-
-        val_dataset = dataset.take(val_indices)
-        train_dataset = dataset.take(train_indices)
-
-        # Train the model on the training set
-        model.fit(train_dataset, epochs=num_epochs)
-
-        # Evaluate the model on the validation set
-        val_loss, val_acc = model.evaluate(val_dataset)
-        val_losses.append(val_loss)
-        val_accs.append(val_acc)
-
-    print(
-        "Mean Validation Loss = {}, Mean Validation Accuracy = {}".format(
-            np.mean(val_losses), np.mean(val_accs)
+        print(
+            "Mean Validation Loss = {}, Mean Validation Accuracy = {}".format(
+                np.mean(val_losses), np.mean(val_accs)
+            )
         )
-    )
 
-
-def train_model(input_shape):
+def create_training_data():
+    # does first 3 sections of train model function
     # Load the Stanford Dogs dataset
     print("Loading dogs...")
     dogs_ds, dogs_info = tfds.load("stanford_dogs", with_info=True, split="train[:60%]")
@@ -77,6 +69,12 @@ def train_model(input_shape):
     # Subset both datasets
     dogs_ds = dogs_ds.take(1000)
     non_dogs_ds = non_dogs_ds.take(1000)
+    return (dogs_ds, non_dogs_ds)
+
+
+def train_model(input_shape, lamby, training_data):
+    # Load the Stanford Dogs dataset
+    dogs_ds, non_dogs_ds = training_data
 
     print("Processing dogs...")
     # Preprocess the dog images
@@ -100,9 +98,6 @@ def train_model(input_shape):
     # Shuffle and batch the dataset
     dataset = dataset.shuffle(1024).batch(32).prefetch(tf.data.AUTOTUNE)
 
-    # added crossval step to building model
-    kfold_crossval(dataset, k_folds=5, num_epochs=5)
-
     print("Building model...")
     # Create the model
     model = models.Sequential()
@@ -114,13 +109,13 @@ def train_model(input_shape):
             (3, 3),
             activation="relu",
             input_shape=input_shape,
-            kernel_regularizer=regularizers.L1(0.01),
+            kernel_regularizer=regularizers.L1(lamby),
         )
     )
     model.add(layers.MaxPooling2D((2, 2)))
     model.add(
         layers.Conv2D(
-            64, (3, 3), activation="relu", kernel_regularizer=regularizers.L1(0.01)
+            64, (3, 3), activation="relu", kernel_regularizer=regularizers.L1(lamby)
         )
     )
     model.add(layers.MaxPooling2D((2, 2)))
@@ -134,11 +129,11 @@ def train_model(input_shape):
 
     # Add the dense layers
     model.add(
-        layers.Dense(512, activation="relu", kernel_regularizer=regularizers.L1(0.01))
+        layers.Dense(512, activation="relu", kernel_regularizer=regularizers.L1(lamby))
     )
     model.add(layers.Dropout(0.5))
     model.add(
-        layers.Dense(1, activation="sigmoid", kernel_regularizer=regularizers.L1(0.01))
+        layers.Dense(1, activation="sigmoid", kernel_regularizer=regularizers.L1(lamby))
     )
 
     print("Training model...")
@@ -147,10 +142,14 @@ def train_model(input_shape):
 
     # Train the model
     history = model.fit(dataset, epochs=5)
-
+    
     print("Done!")
     return model
 
+def train_final_model():
+    #runs kfold crossval
+    #gets best lambda
+    #
 
 def preprocess_image(image_path):
     # Load the image using Pillow
