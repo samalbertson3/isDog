@@ -1,1 +1,6 @@
 venv
+*.ipynb
+*.jpg
+*.png
+*.webp
+*.pb
