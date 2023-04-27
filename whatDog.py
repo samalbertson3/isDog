@@ -352,8 +352,8 @@ def main() -> None:
     """Do the thing."""
     buildWhichDog(model_filepath="saved_model/whichDog")
     predict_dog("dog.jpg")
-    predict_biglil("dog.jpg")
-    predict_dog("dog2.jpg")
+    print(predict_biglil("dog.jpg"))
+    print(predict_dog("dog2.jpg"))
     predict_biglil("dog2.jpg")
     predict_dog("non-dog.jpg")
     predict_dog("non-dog2.jpg")
