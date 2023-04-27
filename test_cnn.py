@@ -9,21 +9,18 @@ input_shape = (224, 224, 3)
 
 
 # test
-def train_model(input_shape):
+def train_model(input_shape, lamby):
     # Load the Stanford Dogs dataset
     print("Loading dogs...")
-    dogs_ds, dogs_info = tfds.load("stanford_dogs", with_info=True, split="train[:60%]")
+    dogs_ds, dogs_info = tfds.load(
+        "stanford_dogs", with_info=True, split="train[:100%]"
+    )
 
     print("Loading non-dogs...")
     # Load the Caltech 101 dataset
     non_dogs_ds, non_dogs_info = tfds.load(
-        "caltech101", with_info=True, split="train[:60%]"
+        "caltech101", with_info=True, split="train[:100%]"
     )
-
-    print("Subsetting data...")
-    # Subset both datasets
-    dogs_ds = dogs_ds.take(1000)
-    non_dogs_ds = non_dogs_ds.take(1000)
 
     print("Processing dogs...")
     # Preprocess the dog images
@@ -40,12 +37,18 @@ def train_model(input_shape):
         lambda x: (tf.image.resize(x["image"], (224, 224)), tf.constant(0))
     )
 
+    # Shuffle and batch the dataset
+    dogs_ds = dogs_ds.shuffle(1024).batch(32).prefetch(tf.data.AUTOTUNE)
+    non_dogs_ds = non_dogs_ds.shuffle(1024).batch(32).prefetch(tf.data.AUTOTUNE)
+
+    print("Subsetting data...")
+    # Subset both datasets
+    dogs_ds = dogs_ds.take(50)
+    non_dogs_ds = non_dogs_ds.take(300)
+
     print("Finalizing image processing...")
     # Concatenate the dog and non-dog datasets
     dataset = dogs_ds.concatenate(non_dogs_ds)
-
-    # Shuffle and batch the dataset
-    dataset = dataset.shuffle(1024).batch(32).prefetch(tf.data.AUTOTUNE)
 
     print("Building model...")
     # Create the model
@@ -58,13 +61,13 @@ def train_model(input_shape):
             (3, 3),
             activation="relu",
             input_shape=input_shape,
-            kernel_regularizer=regularizers.L1(0.01),
+            kernel_regularizer=regularizers.L1(lamby),
         )
     )
     model.add(layers.MaxPooling2D((2, 2)))
     model.add(
         layers.Conv2D(
-            64, (3, 3), activation="relu", kernel_regularizer=regularizers.L1(0.01)
+            64, (3, 3), activation="relu", kernel_regularizer=regularizers.L1(lamby)
         )
     )
     model.add(layers.MaxPooling2D((2, 2)))
@@ -78,11 +81,11 @@ def train_model(input_shape):
 
     # Add the dense layers
     model.add(
-        layers.Dense(512, activation="relu", kernel_regularizer=regularizers.L1(0.01))
+        layers.Dense(512, activation="relu", kernel_regularizer=regularizers.L1(lamby))
     )
     model.add(layers.Dropout(0.5))
     model.add(
-        layers.Dense(1, activation="sigmoid", kernel_regularizer=regularizers.L1(0.01))
+        layers.Dense(1, activation="sigmoid", kernel_regularizer=regularizers.L1(lamby))
     )
 
     print("Training model...")
@@ -90,7 +93,7 @@ def train_model(input_shape):
     model.compile(optimizer="adam", loss="binary_crossentropy", metrics=["accuracy"])
 
     # Train the model
-    history = model.fit(dataset, epochs=10)
+    history = model.fit(dataset, epochs=1)
 
     print("Done!")
     return model
@@ -122,7 +125,7 @@ def predict_image_class(image_path, model):
     return predicted_class, raw_prediction
 
 
-model = train_model(input_shape)
+model = train_model(input_shape, 10)
 print(predict_image_class("C:/Users/Sam/Desktop/dog.jpg", model))
 print(predict_image_class("C:/Users/Sam/Desktop/dog2.jpg", model))
 print(predict_image_class("C:/Users/Sam/Desktop/dog3.jpg", model))
