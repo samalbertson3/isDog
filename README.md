@@ -1,15 +1,21 @@
 # isDog
 Final project: utilities package for identifying and classifying images of dogs (and not dogs). 
-Task breakdown: Back end -> Sam, Front end -> Ellie, Testing -> Dani
+Task breakdown: 
+    Updated task breakdown as of 26APR2023
 
-# Functions
-isDog: given an image, determines if image is a dog or not  
-bigBoy: given an image, whether it is a dog or not, its it a big boy or a lil guy  
-whatDog: given an image, whether it is a dog or not, what type of dog characteristics does it have  
+# Functions 
+    *Updated as of 26APR2023*
+**isDog:(img_path)** given an image, determines if image is a dog or not  
+    - Inputs: image file path
+    - Outputs: _
+**bigBoy:(img_path, model_filepath)** given an image, whether it is a dog or not, its it a big boy or a lil guy  
+    - Inputs: image file path, (optional) model storage file path
+    - Outputs: predicted category of dog (big boy or lil guy)
+**whatDog:(img_path, model_filepath)** given an image, whether it is a dog or not, what type of dog characteristics does it have  
+    - Inputs: image file path, (optional) model storage file path
+    - Outputs: predicted breed of dog
 
 # Structure
-The backend is a KNN classifier -> built primarily by Sam that classifies user input images with regards to traits (dog vs not dog, bigboy vs lilguy, yes/no for series of additional descriptor traits/breeds to be determined  
+There are 2 separate convolutional neural networks: one trained on images of both dogs and non-dogs and another trained to identify different breeds of dogs (with no training data that does not contain dogs.)
 
-The front end functions -> built primarily by Ellie allow the user access to functionality in a way that makes sense to the user  
-
-The testing suite -> built primarily by Dani ensures that everything is working as it should
+isDog is built off of the first classifier and both bigBoy and whatDog are built off of the second. 
