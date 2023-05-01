@@ -350,13 +350,14 @@ def predict_biglil(img_path, model_filepath="saved_model/whichDog"):
 
 def main() -> None:
     """Do the thing."""
-    buildWhichDog(model_filepath="saved_model/whichDog")
-    predict_dog("dog.jpg")
-    print(predict_biglil("dog.jpg"))
-    print(predict_dog("dog2.jpg"))
-    predict_biglil("dog2.jpg")
-    predict_dog("non-dog.jpg")
-    predict_dog("non-dog2.jpg")
+    # buildWhichDog(model_filepath="saved_model/whichDog")
+    # predict_dog("dog.jpg")
+    # print(predict_biglil("dog.jpg"))
+    # print(predict_dog("dog2.jpg"))
+    # predict_biglil("dog2.jpg")
+    # predict_dog("non-dog.jpg")
+    # predict_dog("non-dog2.jpg")
+    predict_dog("golden-retriever.jpeg")
 
 
 if __name__ == "__main__":
