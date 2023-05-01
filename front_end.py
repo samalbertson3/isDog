@@ -29,13 +29,12 @@ class IsDog:
                 (3, 3),
                 activation="relu",
                 input_shape=self.input_shape,
-                kernel_regularizer=regularizers.L1(0.01),
             )
         )
         model.add(layers.MaxPooling2D((2, 2)))
         model.add(
             layers.Conv2D(
-                64, (3, 3), activation="relu", kernel_regularizer=regularizers.L1(0.01)
+                64, (3, 3), activation="relu"
             )
         )
         model.add(layers.MaxPooling2D((2, 2)))
@@ -45,7 +44,11 @@ class IsDog:
 
         # Add the dense layers
         model.add(
-            layers.Dense(512, activation="relu", kernel_regularizer=regularizers.L1(0.01))
+            layers.Dense(1024, activation="relu")
+        )
+        model.add(layers.Dropout(0.5))
+        model.add(
+            layers.Dense(512, activation="relu")
         )
         model.add(layers.Dropout(0.5))
         model.add(
@@ -122,9 +125,12 @@ class IsDog:
         self.model.compile(optimizer="adam", loss="binary_crossentropy", metrics=["accuracy"])
 
         # Train the model
-        history = self.model.fit(dataset, epochs=10)
-        
+        history = self.model.fit(dataset, epochs=10, validation_data=val_dataset)
+        results = self.model.evaluate(test_dataset)
+
         print("Done!")
+        print("Test loss: ", results[0])
+        print("Test accuracy: ", results[1])
         return self.model
     
     def save_model(self, filepath:str = "saved_models/isDog") -> None:
