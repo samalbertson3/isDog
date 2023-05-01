@@ -10,12 +10,13 @@ import os
 # https://pythonspot.com/polymorphism/
 # "/Users/ellieanderson/Downloads/golden-retriever.jpg"
 
+
 class IsDog:
     """Determine if an image is of a dog."""
-    def __init__(self, input_shape:tuple = (224, 224, 3)) -> None:
+
+    def __init__(self, input_shape: tuple = (224, 224, 3)) -> None:
         self.input_shape = input_shape
 
-    
     @property
     def model(self):
         print("Building model...")
@@ -45,18 +46,23 @@ class IsDog:
 
         # Add the dense layers
         model.add(
-            layers.Dense(512, activation="relu", kernel_regularizer=regularizers.L1(0.01))
+            layers.Dense(
+                512, activation="relu", kernel_regularizer=regularizers.L1(0.01)
+            )
         )
         model.add(layers.Dropout(0.5))
         model.add(
-            layers.Dense(1, activation="sigmoid", kernel_regularizer=regularizers.L1(0.01))
+            layers.Dense(
+                1, activation="sigmoid", kernel_regularizer=regularizers.L1(0.01)
+            )
         )
 
-    
-    def train_model(self, filepath):
+    def train_model(self):
         # Load the Stanford Dogs dataset
         print("Loading dogs...")
-        dogs_ds, dogs_info = tfds.load("stanford_dogs", with_info=True, split="train[:60%]")
+        dogs_ds, dogs_info = tfds.load(
+            "stanford_dogs", with_info=True, split="train[:60%]"
+        )
 
         print("Loading non-dogs...")
         # Load the Caltech 101 dataset
@@ -93,15 +99,17 @@ class IsDog:
 
         print("Training model...")
         # Compile the model
-        self.model.compile(optimizer="adam", loss="binary_crossentropy", metrics=["accuracy"])
+        self.model.compile(
+            optimizer="adam", loss="binary_crossentropy", metrics=["accuracy"]
+        )
 
         # Train the model
         history = self.model.fit(dataset, epochs=10)
-        
+
         print("Done!")
         return self.model
-    
-    def save_model(self, filepath:str = "saved_models/isDog") -> None:
+
+    def save_model(self, filepath: str = "saved_models/isDog") -> None:
         """Save model to disk"""
         self.model.save(filepath)
 
@@ -118,8 +126,7 @@ class IsDog:
         img_array = img_array / 255.0
         return img_array
 
-
-    def predict_dog(self, image_path, model_filepath = "saved_model/isDog"):
+    def predict_dog(self, image_path, model_filepath="saved_model/isDog"):
         # Preprocess the input image
         img_array = self.preprocess_image(image_path)
         # Use the model to make a prediction
@@ -132,140 +139,142 @@ class IsDog:
         if predicted_class == 1:
             print(f"The image is a dog. ({round(raw_prediction[0]*100, 2)}% confident)")
         else:
-            print(f"The image is not a dog. ({round(raw_prediction[1]*100, 2)}% confident)")
+            print(
+                f"The image is not a dog. ({round(raw_prediction[1]*100, 2)}% confident)"
+            )
         # return predicted_class, raw_prediction
-
 
     # model = train_model(self.input_shape)
 
+
 class DogClassifier:
-    def __init__(self, batchsize = 32, imgsize = (224, 224)) -> None:
+    def __init__(self, batchsize=32, imgsize=(224, 224)) -> None:
         # Define the input size of the images
         self.batchsize = batchsize
         self.imgsize = imgsize
 
         # Define list of breeds
         self.breedslist = [
-        "chihuahua",
-        "japanese spaniel",
-        "maltese dog",
-        "pekinese",
-        "shih-tzu",
-        "blenheim spaniel",
-        "papillon",
-        "toy terrier",
-        "rhodesian ridgeback",
-        "afghan hound",
-        "basset",
-        "beagle",
-        "bloodhound",
-        "bluetick",
-        "black-and-tan coonhound",
-        "walker hound",
-        "english foxhound",
-        "redbone",
-        "borzoi",
-        "irish wolfhound",
-        "italian greyhound",
-        "whippet",
-        "ibizan hound",
-        "norwegian elkhound",
-        "otterhound",
-        "saluki",
-        "scottish deerhound",
-        "weimaraner",
-        "staffordshire bullterrier",
-        "american staffordshire terrier",
-        "bedlington terrier",
-        "border terrier",
-        "kerry blue terrier",
-        "irish terrier",
-        "norfolk terrier",
-        "norwich terrier",
-        "yorkshire terrier",
-        "wire-haired fox terrier",
-        "lakeland terrier",
-        "sealyham terrier",
-        "airedale",
-        "cairn",
-        "australian terrier",
-        "dandie dinmont",
-        "boston bull",
-        "miniature schnauzer",
-        "giant schnauzer",
-        "standard schnauzer",
-        "scotch terrier",
-        "tibetan terrier",
-        "silky terrier",
-        "soft-coated wheaten terrier",
-        "west highland white terrier",
-        "lhasa",
-        "flat-coated retriever",
-        "curly-coated retriever",
-        "golden retriever",
-        "labrador retriever",
-        "chesapeake bay retriever",
-        "german short-haired pointer",
-        "vizsla",
-        "english setter",
-        "irish setter",
-        "gordon setter",
-        "brittany spaniel",
-        "clumber",
-        "english springer",
-        "welsh springer spaniel",
-        "cocker spaniel",
-        "sussex spaniel",
-        "irish water spaniel",
-        "kuvasz",
-        "schipperke",
-        "groenendael",
-        "malinois",
-        "briard",
-        "kelpie",
-        "komondor",
-        "old english sheepdog",
-        "shetland sheepdog",
-        "collie",
-        "border collie",
-        "bouvier des flandres",
-        "rottweiler",
-        "german shepherd",
-        "doberman",
-        "miniature pinscher",
-        "greater swiss mountain dog",
-        "bernese mountain dog",
-        "appenzeller",
-        "entlebucher",
-        "boxer",
-        "bull mastiff",
-        "tibetan mastiff",
-        "french bulldog",
-        "great dane",
-        "saint bernard",
-        "eskimo dog",
-        "malamute",
-        "siberian husky",
-        "affenpinscher",
-        "basenji",
-        "pug",
-        "leonberg",
-        "newfoundland",
-        "great pyrenees",
-        "samoyed",
-        "pomeranian",
-        "chow",
-        "keeshond",
-        "brabancon griffon",
-        "pembroke",
-        "cardigan",
-        "toy poodle",
-        "miniature poodle",
-        "standard poodle",
-        "mexican hairless",
-        "dingo",
-        "dhole",
-        "african hunting dog",
+            "chihuahua",
+            "japanese spaniel",
+            "maltese dog",
+            "pekinese",
+            "shih-tzu",
+            "blenheim spaniel",
+            "papillon",
+            "toy terrier",
+            "rhodesian ridgeback",
+            "afghan hound",
+            "basset",
+            "beagle",
+            "bloodhound",
+            "bluetick",
+            "black-and-tan coonhound",
+            "walker hound",
+            "english foxhound",
+            "redbone",
+            "borzoi",
+            "irish wolfhound",
+            "italian greyhound",
+            "whippet",
+            "ibizan hound",
+            "norwegian elkhound",
+            "otterhound",
+            "saluki",
+            "scottish deerhound",
+            "weimaraner",
+            "staffordshire bullterrier",
+            "american staffordshire terrier",
+            "bedlington terrier",
+            "border terrier",
+            "kerry blue terrier",
+            "irish terrier",
+            "norfolk terrier",
+            "norwich terrier",
+            "yorkshire terrier",
+            "wire-haired fox terrier",
+            "lakeland terrier",
+            "sealyham terrier",
+            "airedale",
+            "cairn",
+            "australian terrier",
+            "dandie dinmont",
+            "boston bull",
+            "miniature schnauzer",
+            "giant schnauzer",
+            "standard schnauzer",
+            "scotch terrier",
+            "tibetan terrier",
+            "silky terrier",
+            "soft-coated wheaten terrier",
+            "west highland white terrier",
+            "lhasa",
+            "flat-coated retriever",
+            "curly-coated retriever",
+            "golden retriever",
+            "labrador retriever",
+            "chesapeake bay retriever",
+            "german short-haired pointer",
+            "vizsla",
+            "english setter",
+            "irish setter",
+            "gordon setter",
+            "brittany spaniel",
+            "clumber",
+            "english springer",
+            "welsh springer spaniel",
+            "cocker spaniel",
+            "sussex spaniel",
+            "irish water spaniel",
+            "kuvasz",
+            "schipperke",
+            "groenendael",
+            "malinois",
+            "briard",
+            "kelpie",
+            "komondor",
+            "old english sheepdog",
+            "shetland sheepdog",
+            "collie",
+            "border collie",
+            "bouvier des flandres",
+            "rottweiler",
+            "german shepherd",
+            "doberman",
+            "miniature pinscher",
+            "greater swiss mountain dog",
+            "bernese mountain dog",
+            "appenzeller",
+            "entlebucher",
+            "boxer",
+            "bull mastiff",
+            "tibetan mastiff",
+            "french bulldog",
+            "great dane",
+            "saint bernard",
+            "eskimo dog",
+            "malamute",
+            "siberian husky",
+            "affenpinscher",
+            "basenji",
+            "pug",
+            "leonberg",
+            "newfoundland",
+            "great pyrenees",
+            "samoyed",
+            "pomeranian",
+            "chow",
+            "keeshond",
+            "brabancon griffon",
+            "pembroke",
+            "cardigan",
+            "toy poodle",
+            "miniature poodle",
+            "standard poodle",
+            "mexican hairless",
+            "dingo",
+            "dhole",
+            "african hunting dog",
         ]
 
     def preprocess_data(self, example):
@@ -275,7 +284,7 @@ class DogClassifier:
         image = tf.cast(image, tf.float32) / 255.0
         label = example["label"]
         return image, label
-    
+
     @property
     def model(self):
         """Builds the CNN model and returns model."""
@@ -320,28 +329,30 @@ class DogClassifier:
 
         # Compile the model
         model.compile(
-            optimizer="adam", loss="sparse_categorical_crossentropy", metrics=["accuracy"]
+            optimizer="adam",
+            loss="sparse_categorical_crossentropy",
+            metrics=["accuracy"],
         )
 
         # Train the model
         history = model.fit(train, epochs=2, validation_data=val)
 
         return model
-    
+
     def save_model(self, filepath="saved_model/whichDog") -> None:
         """Save the model to the filepath specified"""
         model = self.train_model()
         model.save(filepath)
-    
-    
+
+
 class WhichDog(DogClassifier):
     def __init__(self, batchsize=32, imgsize=(224, 224)) -> None:
         super().__init__(batchsize, imgsize)
 
-    def predict_dog(self, img_path, model_filepath = "saved_model/whichDog"):
+    def predict_dog(self, img_path, model_filepath="saved_model/whichDog"):
         """Uses saved whichDog model to predict dog breed of image."""
         # Load the model
-        
+
         # if os.path.isfile(model_filepath):
         model = tf.keras.models.load_model(model_filepath)
         # else:
