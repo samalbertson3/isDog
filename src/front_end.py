@@ -57,35 +57,35 @@ class IsDog:
             )
         )
 
-    def train_model(self, suppress_print = False):
+    def train_model(self, print_on=True):
         # Load the Stanford Dogs dataset
-        if !suppress_print:
+        if print_on:
             print("Loading dogs...")
         dogs_ds, dogs_info = tfds.load(
             "stanford_dogs", with_info=True, split="train[:60%]"
         )
 
-        if !suppress_print:
+        if print_on:
             print("Loading non-dogs...")
         # Load the Caltech 101 dataset
         non_dogs_ds, non_dogs_info = tfds.load(
             "caltech101", with_info=True, split="train[:60%]"
         )
 
-        if !suppress_print:
+        if print_on:
             print("Subsetting data...")
         # Subset both datasets
         dogs_ds = dogs_ds.take(1000)
         non_dogs_ds = non_dogs_ds.take(1000)
 
-        if !suppress_print:
+        if print_on:
             print("Processing dogs...")
         # Preprocess the dog images
         dogs_ds = dogs_ds.map(
             lambda x: (tf.image.resize(x["image"], (224, 224)), tf.constant(1))
         )
 
-        if !suppress_print:
+        if print_on:
             print("Processing non-dogs...")
         # Preprocess the non-dog images
         non_dogs_ds = non_dogs_ds.filter(
@@ -94,7 +94,7 @@ class IsDog:
         non_dogs_ds = non_dogs_ds.map(
             lambda x: (tf.image.resize(x["image"], (224, 224)), tf.constant(0))
         )
-        if !suppress_print:
+        if print_on:
             print("Finalizing image processing...")
         # Concatenate the dog and non-dog datasets
         dataset = dogs_ds.concatenate(non_dogs_ds)
@@ -102,7 +102,7 @@ class IsDog:
         # Shuffle and batch the dataset
         dataset = dataset.shuffle(1024).batch(32).prefetch(tf.data.AUTOTUNE)
 
-        if !suppress_print:
+        if print_on:
             print("Training model...")
         # Compile the model
         self.model.compile(
@@ -112,7 +112,7 @@ class IsDog:
         # Train the model
         history = self.model.fit(dataset, epochs=10)
 
-        if !suppress_print:
+        if print_on:
             print("Done!")
         return self.model
 
