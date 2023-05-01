@@ -56,22 +56,32 @@ class IsDog:
     def train_model(self, filepath):
         # Load the Stanford Dogs dataset
         print("Loading dogs...")
-        dogs_ds, dogs_info = tfds.load("stanford_dogs", with_info=True, split="train[:60%]")
+        dogs_ds, val_dogs_ds, test_dogs_ds = tfds.load("stanford_dogs", with_info=False, split=["train[:70%]","train[70%:]","test"])
 
         print("Loading non-dogs...")
         # Load the Caltech 101 dataset
-        non_dogs_ds, non_dogs_info = tfds.load(
-            "caltech101", with_info=True, split="train[:60%]"
+        non_dogs_ds, val_non_dogs_ds, test_non_dogs_ds = tfds.load(
+            "caltech101", with_info=False, split=["train[:70%]","train[70%:]","test"]
         )
 
         print("Subsetting data...")
         # Subset both datasets
         dogs_ds = dogs_ds.take(1000)
         non_dogs_ds = non_dogs_ds.take(1000)
+        val_dogs_ds = dogs_ds.take(1000)
+        val_non_dogs_ds = non_dogs_ds.take(1000)
+        test_dogs_ds = dogs_ds.take(1000)
+        test_non_dogs_ds = non_dogs_ds.take(1000)
 
         print("Processing dogs...")
         # Preprocess the dog images
         dogs_ds = dogs_ds.map(
+            lambda x: (tf.image.resize(x["image"], (224, 224)), tf.constant(1))
+        )
+        val_dogs_ds = val_dogs_ds.map(
+            lambda x: (tf.image.resize(x["image"], (224, 224)), tf.constant(1))
+        )
+        test_dogs_ds = test_dogs_ds.map(
             lambda x: (tf.image.resize(x["image"], (224, 224)), tf.constant(1))
         )
 
@@ -80,16 +90,32 @@ class IsDog:
         non_dogs_ds = non_dogs_ds.filter(
             lambda x: x["label"] != 37
         )  # exclude the "dog" class from Caltech 101
+        val_non_dogs_ds = val_non_dogs_ds.filter(
+            lambda x: x["label"] != 37
+        )
+        test_non_dogs_ds = test_non_dogs_ds.filter(
+            lambda x: x["label"] != 37
+        )
         non_dogs_ds = non_dogs_ds.map(
+            lambda x: (tf.image.resize(x["image"], (224, 224)), tf.constant(0))
+        )
+        val_non_dogs_ds = val_non_dogs_ds.map(
+            lambda x: (tf.image.resize(x["image"], (224, 224)), tf.constant(0))
+        )
+        test_non_dogs_ds = test_non_dogs_ds.map(
             lambda x: (tf.image.resize(x["image"], (224, 224)), tf.constant(0))
         )
 
         print("Finalizing image processing...")
         # Concatenate the dog and non-dog datasets
         dataset = dogs_ds.concatenate(non_dogs_ds)
+        val_dataset = val_dogs_ds.concatenate(val_non_dogs_ds)
+        test_dataset = test_dogs_ds.concatenate(test_non_dogs_ds)
 
         # Shuffle and batch the dataset
         dataset = dataset.shuffle(1024).batch(32).prefetch(tf.data.AUTOTUNE)
+        val_dataset = val_dataset.shuffle(1024).batch(32).prefetch(tf.data.AUTOTUNE)
+        test_dataset = test_dataset.shuffle(1024).batch(32).prefetch(tf.data.AUTOTUNE)
 
         print("Training model...")
         # Compile the model
