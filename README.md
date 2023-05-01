@@ -10,7 +10,7 @@ There are 2 separate convolutional neural networks: one trained on images of bot
 
 Determines if an image contains a dog or not.
 
- - **train_model**()
+ - **train_model**() 
  - **save_model**(model_filepath = "saved_models/isDog")
     - model_filepath (str): directory to where the model will be saved
  - **predict_dog**(img_path, model_path)
