@@ -3,23 +3,22 @@ from tensorflow.keras import layers, models, regularizers
 import tensorflow_datasets as tfds
 import numpy as np
 from PIL import Image
+import matplotlib as plt
 
 # Define the input size of the images
 input_shape = (224, 224, 3)
 
 
 # test
-def train_model(input_shape, lamby):
+def train_model(input_shape):
     # Load the Stanford Dogs dataset
     print("Loading dogs...")
-    dogs_ds, dogs_info = tfds.load(
-        "stanford_dogs", with_info=True, split="train[:100%]"
-    )
+    dogs_ds, dogs_info = tfds.load("stanford_dogs", with_info=True, split="train[:80%]")
 
     print("Loading non-dogs...")
     # Load the Caltech 101 dataset
     non_dogs_ds, non_dogs_info = tfds.load(
-        "caltech101", with_info=True, split="train[:100%]"
+        "caltech101", with_info=True, split="train[:80%]"
     )
 
     print("Processing dogs...")
@@ -27,6 +26,7 @@ def train_model(input_shape, lamby):
     dogs_ds = dogs_ds.map(
         lambda x: (tf.image.resize(x["image"], (224, 224)), tf.constant(1))
     )
+    dogs_ds = dogs_ds.map(lambda x, y: (tf.cast(x, tf.float32) / 255.0, y))
 
     print("Processing non-dogs...")
     # Preprocess the non-dog images
@@ -36,64 +36,54 @@ def train_model(input_shape, lamby):
     non_dogs_ds = non_dogs_ds.map(
         lambda x: (tf.image.resize(x["image"], (224, 224)), tf.constant(0))
     )
+    non_dogs_ds = non_dogs_ds.map(lambda x, y: (tf.cast(x, tf.float32) / 255.0, y))
 
     # Shuffle and batch the dataset
-    dogs_ds = dogs_ds.shuffle(1024).batch(32).prefetch(tf.data.AUTOTUNE)
-    non_dogs_ds = non_dogs_ds.shuffle(1024).batch(32).prefetch(tf.data.AUTOTUNE)
+    dogs_ds = dogs_ds.shuffle(1024).prefetch(tf.data.AUTOTUNE)
+    non_dogs_ds = non_dogs_ds.shuffle(1024).prefetch(tf.data.AUTOTUNE)
 
     print("Subsetting data...")
     # Subset both datasets
-    dogs_ds = dogs_ds.take(50)
-    non_dogs_ds = non_dogs_ds.take(300)
+    dogs_ds = dogs_ds.take(1000)
+    non_dogs_ds = non_dogs_ds.take(1000)
 
     print("Finalizing image processing...")
     # Concatenate the dog and non-dog datasets
     dataset = dogs_ds.concatenate(non_dogs_ds)
+    dataset = dataset.shuffle(1024).batch(32).prefetch(tf.data.AUTOTUNE)
+
+    # for image, label in dataset.take(10):
+    #     # Convert the image to a numpy array
+    #     image = image[0].numpy()
+    #     # Show the image with the label as the title
+    #     plt.imshow(image[0])
+    #     # plt.title(label[0])
+    #     plt.show()
 
     print("Building model...")
     # Create the model
     model = models.Sequential()
-
-    # Add the convolutional layers
-    model.add(
-        layers.Conv2D(
-            32,
-            (3, 3),
-            activation="relu",
-            input_shape=input_shape,
-            kernel_regularizer=regularizers.L1(lamby),
-        )
-    )
+    model.add(layers.Conv2D(32, (3, 3), activation="relu", input_shape=input_shape))
     model.add(layers.MaxPooling2D((2, 2)))
-    model.add(
-        layers.Conv2D(
-            64, (3, 3), activation="relu", kernel_regularizer=regularizers.L1(lamby)
-        )
-    )
+    model.add(layers.Conv2D(64, (3, 3), activation="relu", input_shape=input_shape))
     model.add(layers.MaxPooling2D((2, 2)))
-    # model.add(layers.Conv2D(128, (3, 3), activation="relu"))
-    # model.add(layers.MaxPooling2D((2, 2)))
-    # model.add(layers.Conv2D(128, (3, 3), activation="relu"))
-    # model.add(layers.MaxPooling2D((2, 2)))
-
-    # Add the flatten layer
     model.add(layers.Flatten())
-
-    # Add the dense layers
-    model.add(
-        layers.Dense(512, activation="relu", kernel_regularizer=regularizers.L1(lamby))
-    )
+    model.add(layers.Dense(1024, activation="relu"))
     model.add(layers.Dropout(0.5))
-    model.add(
-        layers.Dense(1, activation="sigmoid", kernel_regularizer=regularizers.L1(lamby))
-    )
+    model.add(layers.Dense(512, activation="relu"))
+    model.add(layers.Dropout(0.5))
+    model.add(layers.Dense(1, activation="sigmoid"))
 
     print("Training model...")
     # Compile the model
-    model.compile(optimizer="adam", loss="binary_crossentropy", metrics=["accuracy"])
+    model.compile(
+        optimizer="adam",
+        loss="binary_crossentropy",
+        metrics=["accuracy"],
+    )
 
     # Train the model
-    history = model.fit(dataset, epochs=1)
+    history = model.fit(dataset, epochs=10)
 
     print("Done!")
     return model
@@ -125,10 +115,14 @@ def predict_image_class(image_path, model):
     return predicted_class, raw_prediction
 
 
-model = train_model(input_shape, 10)
+model = train_model(input_shape)
 print(predict_image_class("C:/Users/Sam/Desktop/dog.jpg", model))
 print(predict_image_class("C:/Users/Sam/Desktop/dog2.jpg", model))
 print(predict_image_class("C:/Users/Sam/Desktop/dog3.jpg", model))
 print(predict_image_class("C:/Users/Sam/Desktop/non-dog.jpg", model))
 print(predict_image_class("C:/Users/Sam/Desktop/non-dog2.jpg", model))
 print(predict_image_class("C:/Users/Sam/Desktop/non-dog3.jpg", model))
+
+# for image_data in sample:
+#     label = image_data["label"].numpy()
+#     print("Label:", label)
