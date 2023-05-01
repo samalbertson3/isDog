@@ -52,7 +52,7 @@ class IsDog:
         )
         model.add(layers.Dropout(0.5))
         model.add(
-            layers.Dense(1, activation="sigmoid", kernel_regularizer=regularizers.L1(0.01))
+            layers.Dense(1, activation="sigmoid")
         )
 
     
@@ -315,19 +315,15 @@ class DogClassifier:
         model = tf.keras.models.Sequential(
             [
                 tf.keras.layers.Conv2D(
-                    32, (3, 3), activation="relu", input_shape=(224, 224, 3)
+                    32, (3, 3), input_shape=(224, 224, 3)
                 ),
                 tf.keras.layers.MaxPooling2D((2, 2)),
-                tf.keras.layers.Conv2D(64, (3, 3), activation="relu"),
-                tf.keras.layers.MaxPooling2D((2, 2)),
-                tf.keras.layers.Conv2D(128, (3, 3), activation="relu"),
-                tf.keras.layers.MaxPooling2D((2, 2)),
-                tf.keras.layers.Conv2D(256, (3, 3), activation="relu"),
+                tf.keras.layers.Conv2D(64, (3, 3)),
                 tf.keras.layers.MaxPooling2D((2, 2)),
                 tf.keras.layers.Flatten(),
-                tf.keras.layers.Dense(512, activation="relu"),
+                tf.keras.layers.Dense(2048),
                 tf.keras.layers.Dropout(0.5),
-                tf.keras.layers.Dense(len(self.breedslist), activation="softmax"),
+                tf.keras.layers.Dense(len(self.breedslist), activation="relu"),
             ]
         )
         return model
