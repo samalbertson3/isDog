@@ -43,11 +43,7 @@ class IsDog:
 
         # Add the dense layers
         model.add(
-            layers.Dense(1024)
-        )
-        model.add(layers.Dropout(0.5))
-        model.add(
-            layers.Dense(512)
+            layers.Dense(2048)
         )
         model.add(layers.Dropout(0.5))
         model.add(
@@ -126,7 +122,7 @@ class IsDog:
         model.compile(optimizer="adam", loss="binary_crossentropy", metrics=["accuracy"])
 
         # Train the model
-        history = model.fit(dataset, epochs=10, validation_data=val_dataset)
+        history = model.fit(dataset, epochs=3, validation_data=val_dataset)
         results = model.evaluate(test_dataset)
 
         print("Done!")
