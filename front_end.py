@@ -54,6 +54,7 @@ class IsDog:
         model.add(
             layers.Dense(1, activation="sigmoid")
         )
+        return model
 
     
     def train_model(self, filepath):
@@ -122,16 +123,17 @@ class IsDog:
 
         print("Training model...")
         # Compile the model
-        self.model.compile(optimizer="adam", loss="binary_crossentropy", metrics=["accuracy"])
+        model = self.model
+        model.compile(optimizer="adam", loss="binary_crossentropy", metrics=["accuracy"])
 
         # Train the model
-        history = self.model.fit(dataset, epochs=10, validation_data=val_dataset)
-        results = self.model.evaluate(test_dataset)
+        history = model.fit(dataset, epochs=10, validation_data=val_dataset)
+        results = model.evaluate(test_dataset)
 
         print("Done!")
         print("Test loss: ", results[0])
         print("Test accuracy: ", results[1])
-        return self.model
+        return model
     
     def save_model(self, filepath:str = "saved_models/isDog") -> None:
         """Save model to disk"""
