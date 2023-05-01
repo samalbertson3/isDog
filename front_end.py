@@ -27,14 +27,13 @@ class IsDog:
             layers.Conv2D(
                 32,
                 (3, 3),
-                activation="relu",
                 input_shape=self.input_shape,
             )
         )
         model.add(layers.MaxPooling2D((2, 2)))
         model.add(
             layers.Conv2D(
-                64, (3, 3), activation="relu"
+                64, (3, 3),
             )
         )
         model.add(layers.MaxPooling2D((2, 2)))
@@ -44,16 +43,13 @@ class IsDog:
 
         # Add the dense layers
         model.add(
-            layers.Dense(1024, activation="relu")
-        )
-        model.add(layers.Dropout(0.5))
-        model.add(
-            layers.Dense(512, activation="relu")
+            layers.Dense(2048)
         )
         model.add(layers.Dropout(0.5))
         model.add(
             layers.Dense(1, activation="sigmoid")
         )
+
         return model
 
     
@@ -127,7 +123,8 @@ class IsDog:
         model.compile(optimizer="adam", loss="binary_crossentropy", metrics=["accuracy"])
 
         # Train the model
-        history = model.fit(dataset, epochs=10, validation_data=val_dataset)
+
+        history = model.fit(dataset, epochs=3, validation_data=val_dataset)
         results = model.evaluate(test_dataset)
 
         print("Done!")
@@ -398,7 +395,7 @@ class WhichDog(DogClassifier):
         return predicted_breed
 
 
-class BigDog(DogClassifier):
+class BigDog(WhichDog):
     def __init__(self, batchsize=32, imgsize=(224, 224)) -> None:
         super().__init__(batchsize, imgsize)
 
@@ -516,7 +513,7 @@ class BigDog(DogClassifier):
             "Pembroke",
             "Cardigan",
         ]
-        breed = self.predict_dog(img_path, model_filepath)
+        breed = self.predict_dog(img_path)
         if breed in big_boys:
             dogType = "Big Boy"
         elif breed in lil_guys:
