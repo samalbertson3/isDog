@@ -44,9 +44,7 @@ class IsDog:
         model.add(layers.Flatten())
 
         # Add the dense layers
-        model.add(layers.Dense(1024))
-        model.add(layers.Dropout(0.5))
-        model.add(layers.Dense(512))
+        model.add(layers.Dense(2048))
         model.add(layers.Dropout(0.5))
         model.add(layers.Dense(1, activation="sigmoid"))
         return model
@@ -131,7 +129,7 @@ class IsDog:
         )
 
         # Train the model
-        history = model.fit(dataset, epochs=10, validation_data=val_dataset)
+        history = model.fit(dataset, epochs=3, validation_data=val_dataset)
         results = model.evaluate(test_dataset)
 
         if print_on:
