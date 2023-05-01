@@ -47,11 +47,12 @@ class IsDog:
         model.add(layers.Dense(2048))
         model.add(layers.Dropout(0.5))
         model.add(layers.Dense(1, activation="sigmoid"))
+
         return model
 
-    def train_model(self, print_on=True):
+    def train_model(self, suppress_print = False):
         # Load the Stanford Dogs dataset
-        if print_on:
+        if !suppress_print:
             print("Loading dogs...")
         dogs_ds, val_dogs_ds, test_dogs_ds = tfds.load(
             "stanford_dogs",
@@ -59,14 +60,14 @@ class IsDog:
             split=["train[:70%]", "train[70%:]", "test"],
         )
 
-        if print_on:
+        if !suppress_print:
             print("Loading non-dogs...")
         # Load the Caltech 101 dataset
         non_dogs_ds, val_non_dogs_ds, test_non_dogs_ds = tfds.load(
             "caltech101", with_info=False, split=["train[:70%]", "train[70%:]", "test"]
         )
 
-        if print_on:
+        if !suppress_print:
             print("Subsetting data...")
         # Subset both datasets
         dogs_ds = dogs_ds.take(1000)
@@ -76,7 +77,7 @@ class IsDog:
         test_dogs_ds = dogs_ds.take(1000)
         test_non_dogs_ds = non_dogs_ds.take(1000)
 
-        if print_on:
+        if !suppress_print:
             print("Processing dogs...")
         # Preprocess the dog images
         dogs_ds = dogs_ds.map(
@@ -89,7 +90,7 @@ class IsDog:
             lambda x: (tf.image.resize(x["image"], (224, 224)), tf.constant(1))
         )
 
-        if print_on:
+        if !suppress_print:
             print("Processing non-dogs...")
         # Preprocess the non-dog images
         non_dogs_ds = non_dogs_ds.filter(
@@ -100,16 +101,14 @@ class IsDog:
         non_dogs_ds = non_dogs_ds.map(
             lambda x: (tf.image.resize(x["image"], (224, 224)), tf.constant(0))
         )
-        if print_on:
-            print("Finalizing image processing...")
         val_non_dogs_ds = val_non_dogs_ds.map(
             lambda x: (tf.image.resize(x["image"], (224, 224)), tf.constant(0))
         )
         test_non_dogs_ds = test_non_dogs_ds.map(
             lambda x: (tf.image.resize(x["image"], (224, 224)), tf.constant(0))
         )
-
-        print("Finalizing image processing...")
+        if !suppress_print:
+            print("Finalizing image processing...")
         # Concatenate the dog and non-dog datasets
         dataset = dogs_ds.concatenate(non_dogs_ds)
         val_dataset = val_dogs_ds.concatenate(val_non_dogs_ds)
@@ -119,7 +118,8 @@ class IsDog:
         dataset = dataset.shuffle(1024).batch(32).prefetch(tf.data.AUTOTUNE)
         val_dataset = val_dataset.shuffle(1024).batch(32).prefetch(tf.data.AUTOTUNE)
         test_dataset = test_dataset.shuffle(1024).batch(32).prefetch(tf.data.AUTOTUNE)
-        if print_on:
+
+        if !suppress_print:
             print("Training model...")
         # Compile the model
         model = self.model
@@ -128,14 +128,14 @@ class IsDog:
         )
 
         # Train the model
+
         history = model.fit(dataset, epochs=3, validation_data=val_dataset)
         results = model.evaluate(test_dataset)
 
-        if print_on:
+        if !suppress_print:
             print("Done!")
-            print("Done!")
-            print("Test loss: ", results[0])
-            print("Test accuracy: ", results[1])
+        print("Test loss: ", results[0])
+        print("Test accuracy: ", results[1])
         return model
 
     def save_model(self, filepath: str = "saved_models/isDog") -> None:
