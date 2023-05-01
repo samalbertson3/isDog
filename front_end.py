@@ -5,6 +5,7 @@ from tensorflow.keras.optimizers import Adam
 from tensorflow.keras.preprocessing.image import ImageDataGenerator
 import numpy as np
 from PIL import Image
+import os
 
 # https://pythonspot.com/polymorphism/
 # "/Users/ellieanderson/Downloads/golden-retriever.jpg"
@@ -14,8 +15,45 @@ class IsDog:
     def __init__(self, input_shape:tuple = (224, 224, 3)) -> None:
         self.input_shape = input_shape
 
+    
     @property
-    def model(self, filepath = "saved_model/isDog"):
+    def model(self):
+        print("Building model...")
+        # Create the model
+        model = models.Sequential()
+
+        # Add the convolutional layers
+        model.add(
+            layers.Conv2D(
+                32,
+                (3, 3),
+                activation="relu",
+                input_shape=self.input_shape,
+                kernel_regularizer=regularizers.L1(0.01),
+            )
+        )
+        model.add(layers.MaxPooling2D((2, 2)))
+        model.add(
+            layers.Conv2D(
+                64, (3, 3), activation="relu", kernel_regularizer=regularizers.L1(0.01)
+            )
+        )
+        model.add(layers.MaxPooling2D((2, 2)))
+
+        # Add the flatten layer
+        model.add(layers.Flatten())
+
+        # Add the dense layers
+        model.add(
+            layers.Dense(512, activation="relu", kernel_regularizer=regularizers.L1(0.01))
+        )
+        model.add(layers.Dropout(0.5))
+        model.add(
+            layers.Dense(1, activation="sigmoid", kernel_regularizer=regularizers.L1(0.01))
+        )
+
+    
+    def train_model(self, filepath):
         # Load the Stanford Dogs dataset
         print("Loading dogs...")
         dogs_ds, dogs_info = tfds.load("stanford_dogs", with_info=True, split="train[:60%]")
@@ -53,51 +91,19 @@ class IsDog:
         # Shuffle and batch the dataset
         dataset = dataset.shuffle(1024).batch(32).prefetch(tf.data.AUTOTUNE)
 
-        print("Building model...")
-        # Create the model
-        model = models.Sequential()
-
-        # Add the convolutional layers
-        model.add(
-            layers.Conv2D(
-                32,
-                (3, 3),
-                activation="relu",
-                input_shape=self.input_shape,
-                kernel_regularizer=regularizers.L1(0.01),
-            )
-        )
-        model.add(layers.MaxPooling2D((2, 2)))
-        model.add(
-            layers.Conv2D(
-                64, (3, 3), activation="relu", kernel_regularizer=regularizers.L1(0.01)
-            )
-        )
-        model.add(layers.MaxPooling2D((2, 2)))
-
-        # Add the flatten layer
-        model.add(layers.Flatten())
-
-        # Add the dense layers
-        model.add(
-            layers.Dense(512, activation="relu", kernel_regularizer=regularizers.L1(0.01))
-        )
-        model.add(layers.Dropout(0.5))
-        model.add(
-            layers.Dense(1, activation="sigmoid", kernel_regularizer=regularizers.L1(0.01))
-        )
-
         print("Training model...")
         # Compile the model
-        model.compile(optimizer="adam", loss="binary_crossentropy", metrics=["accuracy"])
+        self.model.compile(optimizer="adam", loss="binary_crossentropy", metrics=["accuracy"])
 
         # Train the model
-        history = model.fit(dataset, epochs=10)
+        history = self.model.fit(dataset, epochs=10)
         
-        model.save(filepath)
         print("Done!")
-        return model
-
+        return self.model
+    
+    def save_model(self, filepath:str = "saved_models/isDog") -> None:
+        """Save model to disk"""
+        self.model.save(filepath)
 
     def preprocess_image(self, image_path):
         # Load the image using Pillow
@@ -124,9 +130,9 @@ class IsDog:
         predicted_class = int(np.round(raw_prediction))
         # Return the predicted class
         if predicted_class == 1:
-            print(f"The image is a dog. ({round(raw_prediction[0]*100)}% confident)")
+            print(f"The image is a dog. ({round(raw_prediction[0]*100, 2)}% confident)")
         else:
-            print(f"The image is not a dog. ({raw_prediction[1]*100}% confident)")
+            print(f"The image is not a dog. ({round(raw_prediction[1]*100, 2)}% confident)")
         # return predicted_class, raw_prediction
 
 
@@ -269,13 +275,10 @@ class DogClassifier:
         image = tf.cast(image, tf.float32) / 255.0
         label = example["label"]
         return image, label
-
-
-    def train_model(self, dataset, filepath="saved_model/my_model"):
-        """Performs training of CNN model."""
-        # Define the training and validation data
-        train = dataset.take(5000)
-        val = dataset.skip(5000)
+    
+    @property
+    def model(self):
+        """Builds the CNN model and returns model."""
         # Build model archetecture
         model = tf.keras.models.Sequential(
             [
@@ -295,26 +298,10 @@ class DogClassifier:
                 tf.keras.layers.Dense(len(self.breedslist), activation="softmax"),
             ]
         )
-        # Compile the model
-        model.compile(
-            optimizer="adam", loss="sparse_categorical_crossentropy", metrics=["accuracy"]
-        )
-
-        # Train the model
-        history = model.fit(train, epochs=2, validation_data=val)
-
-        # Save the model to the filepath specified
-        model.save(filepath)
         return model
-    
-    @property
-    def model(self, model_filepath="saved_model/whichDog"):
-        """
-        Builds the CNN model and returns model.
-        
-        If the model property is called, it will retrain, so only do it if 
-        you want a new model.
-        """
+
+    def train_model(self):
+        """Performs training of CNN model."""
         # Load the dataset
         dataset, info = tfds.load("stanford_dogs", with_info=True, split="train[:60%]")
         # shuffle the dataset so we don't just get a subset of dog breeds
@@ -324,17 +311,43 @@ class DogClassifier:
         # Batch the dataset
         dataset = dataset.batch(self.batchsize)
         dataset = dataset.prefetch(tf.data.AUTOTUNE)
-        model = self.train_model(dataset, model_filepath)
+
+        # Define the training and validation data
+        train = dataset.take(5000)
+        val = dataset.skip(5000)
+
+        model = self.model
+
+        # Compile the model
+        model.compile(
+            optimizer="adam", loss="sparse_categorical_crossentropy", metrics=["accuracy"]
+        )
+
+        # Train the model
+        history = model.fit(train, epochs=2, validation_data=val)
+
         return model
+    
+    def save_model(self, filepath="saved_model/whichDog") -> None:
+        """Save the model to the filepath specified"""
+        model = self.train_model()
+        model.save(filepath)
+    
     
 class WhichDog(DogClassifier):
     def __init__(self, batchsize=32, imgsize=(224, 224)) -> None:
         super().__init__(batchsize, imgsize)
 
-    def predict_dog(self, img_path, model_filepath="saved_model/whichDog"):
+    def predict_dog(self, img_path, model_filepath = "saved_model/whichDog"):
         """Uses saved whichDog model to predict dog breed of image."""
         # Load the model
+        
+        # if os.path.isfile(model_filepath):
         model = tf.keras.models.load_model(model_filepath)
+        # else:
+        #     super().train_model()
+        #     super().save_model()
+        #     model = tf.keras.models.load_model(model_filepath)
 
         # Load the image to specified target size
         img = tf.keras.preprocessing.image.load_img(img_path, target_size=(224, 224))
