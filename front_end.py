@@ -29,13 +29,12 @@ class IsDog:
                 (3, 3),
                 activation="relu",
                 input_shape=self.input_shape,
-                kernel_regularizer=regularizers.L1(0.01),
             )
         )
         model.add(layers.MaxPooling2D((2, 2)))
         model.add(
             layers.Conv2D(
-                64, (3, 3), activation="relu", kernel_regularizer=regularizers.L1(0.01)
+                64, (3, 3), activation="relu"
             )
         )
         model.add(layers.MaxPooling2D((2, 2)))
@@ -45,12 +44,17 @@ class IsDog:
 
         # Add the dense layers
         model.add(
-            layers.Dense(512, activation="relu", kernel_regularizer=regularizers.L1(0.01))
+            layers.Dense(1024, activation="relu")
         )
         model.add(layers.Dropout(0.5))
         model.add(
-            layers.Dense(1, activation="sigmoid", kernel_regularizer=regularizers.L1(0.01))
+            layers.Dense(512, activation="relu")
         )
+        model.add(layers.Dropout(0.5))
+        model.add(
+            layers.Dense(1, activation="sigmoid")
+        )
+        return model
 
     
     def train_model(self, filepath):
@@ -119,13 +123,17 @@ class IsDog:
 
         print("Training model...")
         # Compile the model
-        self.model.compile(optimizer="adam", loss="binary_crossentropy", metrics=["accuracy"])
+        model = self.model
+        model.compile(optimizer="adam", loss="binary_crossentropy", metrics=["accuracy"])
 
         # Train the model
-        history = self.model.fit(dataset, epochs=10)
-        
+        history = model.fit(dataset, epochs=10, validation_data=val_dataset)
+        results = model.evaluate(test_dataset)
+
         print("Done!")
-        return self.model
+        print("Test loss: ", results[0])
+        print("Test accuracy: ", results[1])
+        return model
     
     def save_model(self, filepath:str = "saved_models/isDog") -> None:
         """Save model to disk"""
@@ -309,19 +317,15 @@ class DogClassifier:
         model = tf.keras.models.Sequential(
             [
                 tf.keras.layers.Conv2D(
-                    32, (3, 3), activation="relu", input_shape=(224, 224, 3)
+                    32, (3, 3), input_shape=(224, 224, 3)
                 ),
                 tf.keras.layers.MaxPooling2D((2, 2)),
-                tf.keras.layers.Conv2D(64, (3, 3), activation="relu"),
-                tf.keras.layers.MaxPooling2D((2, 2)),
-                tf.keras.layers.Conv2D(128, (3, 3), activation="relu"),
-                tf.keras.layers.MaxPooling2D((2, 2)),
-                tf.keras.layers.Conv2D(256, (3, 3), activation="relu"),
+                tf.keras.layers.Conv2D(64, (3, 3)),
                 tf.keras.layers.MaxPooling2D((2, 2)),
                 tf.keras.layers.Flatten(),
-                tf.keras.layers.Dense(512, activation="relu"),
+                tf.keras.layers.Dense(2048),
                 tf.keras.layers.Dropout(0.5),
-                tf.keras.layers.Dense(len(self.breedslist), activation="softmax"),
+                tf.keras.layers.Dense(len(self.breedslist), activation="relu"),
             ]
         )
         return model
