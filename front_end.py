@@ -49,6 +49,7 @@ class IsDog:
         model.add(
             layers.Dense(1, activation="sigmoid")
         )
+
         return model
 
     
@@ -122,6 +123,7 @@ class IsDog:
         model.compile(optimizer="adam", loss="binary_crossentropy", metrics=["accuracy"])
 
         # Train the model
+
         history = model.fit(dataset, epochs=3, validation_data=val_dataset)
         results = model.evaluate(test_dataset)
 
