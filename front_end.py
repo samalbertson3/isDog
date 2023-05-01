@@ -27,14 +27,13 @@ class IsDog:
             layers.Conv2D(
                 32,
                 (3, 3),
-                activation="relu",
                 input_shape=self.input_shape,
             )
         )
         raw_model.add(layers.MaxPooling2D((2, 2)))
         raw_model.add(
             layers.Conv2D(
-                64, (3, 3), activation="relu"
+                64, (3, 3),
             )
         )
         raw_model.add(layers.MaxPooling2D((2, 2)))
@@ -44,18 +43,14 @@ class IsDog:
 
         # Add the dense layers
         raw_model.add(
-            layers.Dense(1024, activation="relu")
-        )
-        raw_model.add(layers.Dropout(0.5))
-        raw_model.add(
-            layers.Dense(512, activation="relu")
+            layers.Dense(2048)
         )
         raw_model.add(layers.Dropout(0.5))
         raw_model.add(
             layers.Dense(1, activation="sigmoid")
         )
-        return raw_model
 
+        return raw_model
     
     def train_model(self):
         # Load the Stanford Dogs dataset
@@ -127,13 +122,14 @@ class IsDog:
         model.compile(optimizer="adam", loss="binary_crossentropy", metrics=["accuracy"])
 
         # Train the model
-        history = model.fit(dataset, epochs=1, validation_data=val_dataset)
+
+        history = model.fit(dataset, epochs=3, validation_data=val_dataset)
         results = model.evaluate(test_dataset)
 
         print("Done!")
         print("Test loss: ", results[0])
         print("Test accuracy: ", results[1])
-        self.model = model
+        return model
     
     def save_model(self, filepath:str = "saved_models/isDog") -> None:
         """Save model to disk"""
@@ -167,6 +163,8 @@ class IsDog:
             print(f"The image is a dog. ({round(raw_prediction[0]*100, 2)}% confident)")
         else:
             print(f"The image is not a dog. ({round(raw_prediction[1]*100, 2)}% confident)")
+        # return predicted_class, raw_prediction
+
 
 class DogClassifier:
     def __init__(self, batchsize = 32, imgsize = (224, 224)) -> None:
@@ -387,11 +385,11 @@ class WhichDog(DogClassifier):
         return predicted_breed
 
 
-class BigDog(DogClassifier):
+class BigDog(WhichDog):
     def __init__(self, batchsize=32, imgsize=(224, 224)) -> None:
         super().__init__(batchsize, imgsize)
 
-    def predict(self, img_path):
+    def predict_dog(self, img_path, model_filepath = "saved_model/whichDog"):
         big_boys = [
             "Rhodesian Ridgeback",
             "Afghan Hound",
