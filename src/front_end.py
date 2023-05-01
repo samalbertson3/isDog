@@ -49,9 +49,9 @@ class IsDog:
         model.add(layers.Dense(1, activation="sigmoid"))
         return model
 
-    def train_model(self, print_on=True):
+    def train_model(self, suppress_print = False):
         # Load the Stanford Dogs dataset
-        if print_on:
+        if !suppress_print:
             print("Loading dogs...")
         dogs_ds, val_dogs_ds, test_dogs_ds = tfds.load(
             "stanford_dogs",
@@ -59,14 +59,14 @@ class IsDog:
             split=["train[:70%]", "train[70%:]", "test"],
         )
 
-        if print_on:
+        if !suppress_print:
             print("Loading non-dogs...")
         # Load the Caltech 101 dataset
         non_dogs_ds, val_non_dogs_ds, test_non_dogs_ds = tfds.load(
             "caltech101", with_info=False, split=["train[:70%]", "train[70%:]", "test"]
         )
 
-        if print_on:
+        if !suppress_print:
             print("Subsetting data...")
         # Subset both datasets
         dogs_ds = dogs_ds.take(1000)
@@ -76,7 +76,7 @@ class IsDog:
         test_dogs_ds = dogs_ds.take(1000)
         test_non_dogs_ds = non_dogs_ds.take(1000)
 
-        if print_on:
+        if !suppress_print:
             print("Processing dogs...")
         # Preprocess the dog images
         dogs_ds = dogs_ds.map(
@@ -89,7 +89,7 @@ class IsDog:
             lambda x: (tf.image.resize(x["image"], (224, 224)), tf.constant(1))
         )
 
-        if print_on:
+        if !suppress_print:
             print("Processing non-dogs...")
         # Preprocess the non-dog images
         non_dogs_ds = non_dogs_ds.filter(
@@ -100,7 +100,7 @@ class IsDog:
         non_dogs_ds = non_dogs_ds.map(
             lambda x: (tf.image.resize(x["image"], (224, 224)), tf.constant(0))
         )
-        if print_on:
+        if !suppress_print:
             print("Finalizing image processing...")
         val_non_dogs_ds = val_non_dogs_ds.map(
             lambda x: (tf.image.resize(x["image"], (224, 224)), tf.constant(0))
@@ -131,7 +131,7 @@ class IsDog:
         history = model.fit(dataset, epochs=3, validation_data=val_dataset)
         results = model.evaluate(test_dataset)
 
-        if print_on:
+        if !suppress_print:
             print("Done!")
             print("Done!")
             print("Test loss: ", results[0])
