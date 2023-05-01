@@ -28,15 +28,14 @@ class IsDog:
             layers.Conv2D(
                 32,
                 (3, 3),
-                activation="relu",
                 input_shape=self.input_shape,
-                kernel_regularizer=regularizers.L1(0.01),
             )
         )
         model.add(layers.MaxPooling2D((2, 2)))
         model.add(
             layers.Conv2D(
-                64, (3, 3), activation="relu", kernel_regularizer=regularizers.L1(0.01)
+                64,
+                (3, 3),
             )
         )
         model.add(layers.MaxPooling2D((2, 2)))
@@ -45,17 +44,12 @@ class IsDog:
         model.add(layers.Flatten())
 
         # Add the dense layers
-        model.add(
-            layers.Dense(
-                512, activation="relu", kernel_regularizer=regularizers.L1(0.01)
-            )
-        )
+        model.add(layers.Dense(1024))
         model.add(layers.Dropout(0.5))
-        model.add(
-            layers.Dense(
-                1, activation="sigmoid", kernel_regularizer=regularizers.L1(0.01)
-            )
-        )
+        model.add(layers.Dense(512))
+        model.add(layers.Dropout(0.5))
+        model.add(layers.Dense(1, activation="sigmoid"))
+        return model
 
     def train_model(self, print_on=True):
         # Load the Stanford Dogs dataset
@@ -131,16 +125,21 @@ class IsDog:
         if print_on:
             print("Training model...")
         # Compile the model
-        self.model.compile(
+        model = self.model
+        model.compile(
             optimizer="adam", loss="binary_crossentropy", metrics=["accuracy"]
         )
 
         # Train the model
-        history = self.model.fit(dataset, epochs=10)
+        history = model.fit(dataset, epochs=10, validation_data=val_dataset)
+        results = model.evaluate(test_dataset)
 
         if print_on:
             print("Done!")
-        return self.model
+            print("Done!")
+            print("Test loss: ", results[0])
+            print("Test accuracy: ", results[1])
+        return model
 
     def save_model(self, filepath: str = "saved_models/isDog") -> None:
         """Save model to disk"""
@@ -324,20 +323,14 @@ class DogClassifier:
         # Build model archetecture
         model = tf.keras.models.Sequential(
             [
-                tf.keras.layers.Conv2D(
-                    32, (3, 3), activation="relu", input_shape=(224, 224, 3)
-                ),
+                tf.keras.layers.Conv2D(32, (3, 3), input_shape=(224, 224, 3)),
                 tf.keras.layers.MaxPooling2D((2, 2)),
-                tf.keras.layers.Conv2D(64, (3, 3), activation="relu"),
-                tf.keras.layers.MaxPooling2D((2, 2)),
-                tf.keras.layers.Conv2D(128, (3, 3), activation="relu"),
-                tf.keras.layers.MaxPooling2D((2, 2)),
-                tf.keras.layers.Conv2D(256, (3, 3), activation="relu"),
+                tf.keras.layers.Conv2D(64, (3, 3)),
                 tf.keras.layers.MaxPooling2D((2, 2)),
                 tf.keras.layers.Flatten(),
-                tf.keras.layers.Dense(512, activation="relu"),
+                tf.keras.layers.Dense(2048),
                 tf.keras.layers.Dropout(0.5),
-                tf.keras.layers.Dense(len(self.breedslist), activation="softmax"),
+                tf.keras.layers.Dense(len(self.breedslist), activation="relu"),
             ]
         )
         return model
@@ -412,7 +405,7 @@ class WhichDog(DogClassifier):
         return predicted_breed
 
 
-class BigDog(DogClassifier):
+class BigDog(WhichDog):
     def __init__(self, batchsize=32, imgsize=(224, 224)) -> None:
         super().__init__(batchsize, imgsize)
 
@@ -530,7 +523,7 @@ class BigDog(DogClassifier):
             "Pembroke",
             "Cardigan",
         ]
-        breed = self.predict_dog(img_path, model_filepath)
+        breed = self.predict_dog(img_path)
         if breed in big_boys:
             dogType = "Big Boy"
         elif breed in lil_guys:
