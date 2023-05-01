@@ -34,9 +34,6 @@ Determines the breed of a dog in a given image, assuming there is a dog in the f
 
 Assuming the image contains a dog, determine whether the dog is a big dog or a lil dog.
 
- - **train_model**()
- - **save_model**(model_filepath = "saved_models/bigDog")
-    - model_filepath (str): directory to where the model will be saved
  - **predict_dog**(img_path, model_path = "saved_models/bigDog")
     - img_path (str): path to image being predicted. The image must be in .jpg/.jpeg format.
     - model_path (str): path to model  
