@@ -44,26 +44,68 @@ class IsDog:
         model.add(layers.Flatten())
 
         # Add the dense layers
+<<<<<<< HEAD
         model.add(layers.Dense(2048))
         model.add(layers.Dropout(0.5))
         model.add(layers.Dense(1, activation="sigmoid"))
+<<<<<<<< HEAD:src/front_end.py
         return model
+=======
+        model.add(
+            layers.Dense(
+                512, activation="relu", kernel_regularizer=regularizers.L1(0.01)
+            )
+        )
+        model.add(layers.Dropout(0.5))
+        model.add(
+            layers.Dense(
+                1, activation="sigmoid", kernel_regularizer=regularizers.L1(0.01)
+            )
+        )
+>>>>>>> 3d21163 (removed "filepath" from train_model)
 
     def train_model(self, print_on=True):
         # Load the Stanford Dogs dataset
         if print_on:
             print("Loading dogs...")
+<<<<<<< HEAD
+========
+
+        return model
+
+    def train_model(self, filepath):
+        # Load the Stanford Dogs dataset
+        print("Loading dogs...")
+>>>>>>>> 3d21163 (removed "filepath" from train_model):front_end.py
         dogs_ds, val_dogs_ds, test_dogs_ds = tfds.load(
             "stanford_dogs",
             with_info=False,
             split=["train[:70%]", "train[70%:]", "test"],
+<<<<<<<< HEAD:src/front_end.py
+========
+        )
+
+        print("Loading non-dogs...")
+        # Load the Caltech 101 dataset
+        non_dogs_ds, val_non_dogs_ds, test_non_dogs_ds = tfds.load(
+            "caltech101", with_info=False, split=["train[:70%]", "train[70%:]", "test"]
+>>>>>>>> 3d21163 (removed "filepath" from train_model):front_end.py
+=======
+        dogs_ds, dogs_info = tfds.load(
+            "stanford_dogs", with_info=True, split="train[:60%]"
+>>>>>>> 3d21163 (removed "filepath" from train_model)
         )
 
         if print_on:
             print("Loading non-dogs...")
         # Load the Caltech 101 dataset
+<<<<<<< HEAD
         non_dogs_ds, val_non_dogs_ds, test_non_dogs_ds = tfds.load(
             "caltech101", with_info=False, split=["train[:70%]", "train[70%:]", "test"]
+=======
+        non_dogs_ds, non_dogs_info = tfds.load(
+            "caltech101", with_info=True, split="train[:60%]"
+>>>>>>> 3d21163 (removed "filepath" from train_model)
         )
 
         if print_on:
@@ -71,10 +113,13 @@ class IsDog:
         # Subset both datasets
         dogs_ds = dogs_ds.take(1000)
         non_dogs_ds = non_dogs_ds.take(1000)
+<<<<<<< HEAD
         val_dogs_ds = dogs_ds.take(1000)
         val_non_dogs_ds = non_dogs_ds.take(1000)
         test_dogs_ds = dogs_ds.take(1000)
         test_non_dogs_ds = non_dogs_ds.take(1000)
+=======
+>>>>>>> 3d21163 (removed "filepath" from train_model)
 
         if print_on:
             print("Processing dogs...")
@@ -82,12 +127,15 @@ class IsDog:
         dogs_ds = dogs_ds.map(
             lambda x: (tf.image.resize(x["image"], (224, 224)), tf.constant(1))
         )
+<<<<<<< HEAD
         val_dogs_ds = val_dogs_ds.map(
             lambda x: (tf.image.resize(x["image"], (224, 224)), tf.constant(1))
         )
         test_dogs_ds = test_dogs_ds.map(
             lambda x: (tf.image.resize(x["image"], (224, 224)), tf.constant(1))
         )
+=======
+>>>>>>> 3d21163 (removed "filepath" from train_model)
 
         if print_on:
             print("Processing non-dogs...")
@@ -95,13 +143,17 @@ class IsDog:
         non_dogs_ds = non_dogs_ds.filter(
             lambda x: x["label"] != 37
         )  # exclude the "dog" class from Caltech 101
+<<<<<<< HEAD
         val_non_dogs_ds = val_non_dogs_ds.filter(lambda x: x["label"] != 37)
         test_non_dogs_ds = test_non_dogs_ds.filter(lambda x: x["label"] != 37)
+=======
+>>>>>>> 3d21163 (removed "filepath" from train_model)
         non_dogs_ds = non_dogs_ds.map(
             lambda x: (tf.image.resize(x["image"], (224, 224)), tf.constant(0))
         )
         if print_on:
             print("Finalizing image processing...")
+<<<<<<< HEAD
         val_non_dogs_ds = val_non_dogs_ds.map(
             lambda x: (tf.image.resize(x["image"], (224, 224)), tf.constant(0))
         )
@@ -119,16 +171,28 @@ class IsDog:
         dataset = dataset.shuffle(1024).batch(32).prefetch(tf.data.AUTOTUNE)
         val_dataset = val_dataset.shuffle(1024).batch(32).prefetch(tf.data.AUTOTUNE)
         test_dataset = test_dataset.shuffle(1024).batch(32).prefetch(tf.data.AUTOTUNE)
+=======
+        # Concatenate the dog and non-dog datasets
+        dataset = dogs_ds.concatenate(non_dogs_ds)
+
+        # Shuffle and batch the dataset
+        dataset = dataset.shuffle(1024).batch(32).prefetch(tf.data.AUTOTUNE)
+>>>>>>> 3d21163 (removed "filepath" from train_model)
 
         if print_on:
             print("Training model...")
         # Compile the model
+<<<<<<< HEAD
         model = self.model
         model.compile(
+=======
+        self.model.compile(
+>>>>>>> 3d21163 (removed "filepath" from train_model)
             optimizer="adam", loss="binary_crossentropy", metrics=["accuracy"]
         )
 
         # Train the model
+<<<<<<< HEAD
         history = model.fit(dataset, epochs=3, validation_data=val_dataset)
         results = model.evaluate(test_dataset)
 
@@ -138,6 +202,13 @@ class IsDog:
             print("Test loss: ", results[0])
             print("Test accuracy: ", results[1])
         return model
+=======
+        history = self.model.fit(dataset, epochs=10)
+
+        if print_on:
+            print("Done!")
+        return self.model
+>>>>>>> 3d21163 (removed "filepath" from train_model)
 
     def save_model(self, filepath: str = "saved_models/isDog") -> None:
         """Save model to disk"""
@@ -321,6 +392,7 @@ class DogClassifier:
         # Build model archetecture
         model = tf.keras.models.Sequential(
             [
+<<<<<<< HEAD
                 tf.keras.layers.Conv2D(32, (3, 3), input_shape=(224, 224, 3)),
                 tf.keras.layers.MaxPooling2D((2, 2)),
                 tf.keras.layers.Conv2D(64, (3, 3)),
@@ -329,6 +401,22 @@ class DogClassifier:
                 tf.keras.layers.Dense(2048),
                 tf.keras.layers.Dropout(0.5),
                 tf.keras.layers.Dense(len(self.breedslist), activation="relu"),
+=======
+                tf.keras.layers.Conv2D(
+                    32, (3, 3), activation="relu", input_shape=(224, 224, 3)
+                ),
+                tf.keras.layers.MaxPooling2D((2, 2)),
+                tf.keras.layers.Conv2D(64, (3, 3), activation="relu"),
+                tf.keras.layers.MaxPooling2D((2, 2)),
+                tf.keras.layers.Conv2D(128, (3, 3), activation="relu"),
+                tf.keras.layers.MaxPooling2D((2, 2)),
+                tf.keras.layers.Conv2D(256, (3, 3), activation="relu"),
+                tf.keras.layers.MaxPooling2D((2, 2)),
+                tf.keras.layers.Flatten(),
+                tf.keras.layers.Dense(512, activation="relu"),
+                tf.keras.layers.Dropout(0.5),
+                tf.keras.layers.Dense(len(self.breedslist), activation="softmax"),
+>>>>>>> 3d21163 (removed "filepath" from train_model)
             ]
         )
         return model
@@ -403,7 +491,11 @@ class WhichDog(DogClassifier):
         return predicted_breed
 
 
+<<<<<<< HEAD
 class BigDog(WhichDog):
+=======
+class BigDog(DogClassifier):
+>>>>>>> 3d21163 (removed "filepath" from train_model)
     def __init__(self, batchsize=32, imgsize=(224, 224)) -> None:
         super().__init__(batchsize, imgsize)
 
@@ -521,7 +613,11 @@ class BigDog(WhichDog):
             "Pembroke",
             "Cardigan",
         ]
+<<<<<<< HEAD
         breed = self.predict_dog(img_path)
+=======
+        breed = self.predict_dog(img_path, model_filepath)
+>>>>>>> 3d21163 (removed "filepath" from train_model)
         if breed in big_boys:
             dogType = "Big Boy"
         elif breed in lil_guys:
