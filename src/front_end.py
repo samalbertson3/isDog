@@ -44,10 +44,10 @@ class IsDog:
         raw_model.add(layers.Flatten())
 
         # Add the dense layers
-        model.add(layers.Dense(2048))
-        model.add(layers.Dropout(0.5))
-        model.add(layers.Dense(1, activation="sigmoid"))
-        return model
+        raw_model.add(layers.Dense(2048))
+        raw_model.add(layers.Dropout(0.5))
+        raw_model.add(layers.Dense(1, activation="sigmoid"))
+        return raw_model
 
     def train_model(self, suppress_print=False, test_mode=False):
         # Load the Stanford Dogs dataset
@@ -129,7 +129,7 @@ class IsDog:
         if not suppress_print:
             print("Training model...")
         # Compile the model
-        model = self.model
+        model = self.raw_model
         model.compile(
             optimizer="adam", loss="binary_crossentropy", metrics=["accuracy"]
         )
@@ -137,6 +137,7 @@ class IsDog:
         # Train the model
         history = model.fit(dataset, epochs=num_epoch, validation_data=val_dataset)
         results = model.evaluate(test_dataset)
+        self.model = model
 
         if not suppress_print:
             print("Done!")
@@ -380,7 +381,7 @@ class DogClassifier:
 
         self.model = model
 
-    def save_model(self, filepath="saved_model/whichDog") -> None:
+    def save_model(self, filepath="saved_models/whichDog") -> None:
         """Save the model to the filepath specified"""
         self.model.save(filepath)
 
@@ -419,7 +420,7 @@ class BigDog(WhichDog):
     def __init__(self, batchsize=32, imgsize=(224, 224)) -> None:
         super().__init__(batchsize, imgsize)
 
-    def predict_dog(self, img_path, model_filepath="saved_model/whichDog"):
+    def predict(self, img_path, model_filepath="saved_models/whichDog"):
         big_boys = [
             "Rhodesian Ridgeback",
             "Afghan Hound",
