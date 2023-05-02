@@ -1,6 +1,0 @@
-Make sure we are raising the right errors!!!!
-    Errors for filetype
-    Errors for "can't find main target" 
-
-Make sure we have test data set!!
-
