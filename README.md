@@ -10,7 +10,7 @@ There are 2 separate convolutional neural networks: one trained on images of bot
 
 Determines if an image contains a dog or not.
 
- - **train_model**()
+ - **train_model**() 
  - **save_model**(model_filepath = "saved_models/isDog")
     - model_filepath (str): directory to where the model will be saved
  - **predict_dog**(img_path, model_path)
@@ -34,9 +34,38 @@ Determines the breed of a dog in a given image, assuming there is a dog in the f
 
 Assuming the image contains a dog, determine whether the dog is a big dog or a lil dog.
 
- - **train_model**()
- - **save_model**(model_filepath = "saved_models/bigDog")
-    - model_filepath (str): directory to where the model will be saved
  - **predict_dog**(img_path, model_path = "saved_models/bigDog")
     - img_path (str): path to image being predicted. The image must be in .jpg/.jpeg format.
-    - model_path (str): path to model  
+    - model_path (str): path to model
+
+# Examples
+
+```
+#################
+# IsDog workflow
+#################
+# creates the model object
+dog_model = IsDog()
+# train the model
+dog_model.train_model()
+# save the model
+dog_model.save_model()
+
+# predict if the image is a dog or not
+dog_model.predict_dog(img_path = "path/to/image/here")
+
+############################
+# Save to your own location
+############################
+# create object
+breed_model = WhichDog()
+#train the model
+breed_model.train_model()
+# save model to desired location
+breed_model.save_model(model_filepath = "path/to/model/here")
+
+# predict the breed of dog in image
+breed_model.predict_dog(img_path = "path/to/image/here", model_path = "path/to/model/here")
+```
+
+The example is for the IsDog classifier, but the same workflow will work for any of the classifiers.

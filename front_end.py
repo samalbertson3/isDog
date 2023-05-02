@@ -17,43 +17,42 @@ class IsDog:
 
     
     @property
-    def model(self):
+    def raw_model(self):
         print("Building model...")
         # Create the model
-        model = models.Sequential()
+        raw_model = models.Sequential()
 
         # Add the convolutional layers
-        model.add(
+        raw_model.add(
             layers.Conv2D(
                 32,
                 (3, 3),
                 input_shape=self.input_shape,
             )
         )
-        model.add(layers.MaxPooling2D((2, 2)))
-        model.add(
+        raw_model.add(layers.MaxPooling2D((2, 2)))
+        raw_model.add(
             layers.Conv2D(
                 64, (3, 3),
             )
         )
-        model.add(layers.MaxPooling2D((2, 2)))
+        raw_model.add(layers.MaxPooling2D((2, 2)))
 
         # Add the flatten layer
-        model.add(layers.Flatten())
+        raw_model.add(layers.Flatten())
 
         # Add the dense layers
-        model.add(
+        raw_model.add(
             layers.Dense(2048)
         )
-        model.add(layers.Dropout(0.5))
-        model.add(
+        raw_model.add(layers.Dropout(0.5))
+        raw_model.add(
             layers.Dense(1, activation="sigmoid")
         )
 
-        return model
-
+        return raw_model
     
-    def train_model(self, filepath):
+    def train_model(self):
         # Load the Stanford Dogs dataset
         print("Loading dogs...")
         dogs_ds, val_dogs_ds, test_dogs_ds = tfds.load("stanford_dogs", with_info=False, split=["train[:70%]","train[70%:]","test"])
@@ -119,7 +118,7 @@ class IsDog:
 
         print("Training model...")
         # Compile the model
-        model = self.model
+        model = self.raw_model
         model.compile(optimizer="adam", loss="binary_crossentropy", metrics=["accuracy"])
 
         # Train the model
@@ -166,8 +165,6 @@ class IsDog:
             print(f"The image is not a dog. ({round(raw_prediction[1]*100, 2)}% confident)")
         # return predicted_class, raw_prediction
 
-
-    # model = train_model(self.input_shape)
 
 class DogClassifier:
     def __init__(self, batchsize = 32, imgsize = (224, 224)) -> None:
@@ -308,10 +305,10 @@ class DogClassifier:
         return image, label
     
     @property
-    def model(self):
+    def raw_model(self):
         """Builds the CNN model and returns model."""
         # Build model archetecture
-        model = tf.keras.models.Sequential(
+        raw_model = tf.keras.models.Sequential(
             [
                 tf.keras.layers.Conv2D(
                     32, (3, 3), input_shape=(224, 224, 3)
@@ -325,7 +322,7 @@ class DogClassifier:
                 tf.keras.layers.Dense(len(self.breedslist), activation="relu"),
             ]
         )
-        return model
+        return raw_model
 
     def train_model(self):
         """Performs training of CNN model."""
@@ -343,7 +340,7 @@ class DogClassifier:
         train = dataset.take(5000)
         val = dataset.skip(5000)
 
-        model = self.model
+        model = self.raw_model
 
         # Compile the model
         model.compile(
@@ -353,12 +350,11 @@ class DogClassifier:
         # Train the model
         history = model.fit(train, epochs=2, validation_data=val)
 
-        return model
+        self.model = model
     
     def save_model(self, filepath="saved_model/whichDog") -> None:
         """Save the model to the filepath specified"""
-        model = self.train_model()
-        model.save(filepath)
+        self.model.save(filepath)
     
     
 class WhichDog(DogClassifier):
@@ -368,13 +364,7 @@ class WhichDog(DogClassifier):
     def predict_dog(self, img_path, model_filepath = "saved_model/whichDog"):
         """Uses saved whichDog model to predict dog breed of image."""
         # Load the model
-        
-        # if os.path.isfile(model_filepath):
         model = tf.keras.models.load_model(model_filepath)
-        # else:
-        #     super().train_model()
-        #     super().save_model()
-        #     model = tf.keras.models.load_model(model_filepath)
 
         # Load the image to specified target size
         img = tf.keras.preprocessing.image.load_img(img_path, target_size=(224, 224))
@@ -399,7 +389,7 @@ class BigDog(WhichDog):
     def __init__(self, batchsize=32, imgsize=(224, 224)) -> None:
         super().__init__(batchsize, imgsize)
 
-    def predict(self, img_path):
+    def predict_dog(self, img_path, model_filepath = "saved_model/whichDog"):
         big_boys = [
             "Rhodesian Ridgeback",
             "Afghan Hound",
