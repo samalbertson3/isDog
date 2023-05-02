@@ -503,7 +503,7 @@ class BigDog(WhichDog):
             "Pembroke",
             "Cardigan",
         ]
-        breed = self.predict_dog(img_path, model_filepath)
+        breed = self.predict_dog(img_path)
         if breed in big_boys:
             dogType = "Big Boy"
         elif breed in lil_guys:
