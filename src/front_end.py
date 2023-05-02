@@ -18,30 +18,30 @@ class IsDog:
         self.input_shape = input_shape
 
     @property
-    def model(self):
+    def raw_model(self):
         print("Building model...")
         # Create the model
-        model = models.Sequential()
+        raw_model = models.Sequential()
 
         # Add the convolutional layers
-        model.add(
+        raw_model.add(
             layers.Conv2D(
                 32,
                 (3, 3),
                 input_shape=self.input_shape,
             )
         )
-        model.add(layers.MaxPooling2D((2, 2)))
-        model.add(
+        raw_model.add(layers.MaxPooling2D((2, 2)))
+        raw_model.add(
             layers.Conv2D(
                 64,
                 (3, 3),
             )
         )
-        model.add(layers.MaxPooling2D((2, 2)))
+        raw_model.add(layers.MaxPooling2D((2, 2)))
 
         # Add the flatten layer
-        model.add(layers.Flatten())
+        raw_model.add(layers.Flatten())
 
         # Add the dense layers
         model.add(layers.Dense(2048))
@@ -325,10 +325,10 @@ class DogClassifier:
         return image, label
 
     @property
-    def model(self):
+    def raw_model(self):
         """Builds the CNN model and returns model."""
         # Build model archetecture
-        model = tf.keras.models.Sequential(
+        raw_model = tf.keras.models.Sequential(
             [
                 tf.keras.layers.Conv2D(32, (3, 3), input_shape=(224, 224, 3)),
                 tf.keras.layers.MaxPooling2D((2, 2)),
@@ -340,7 +340,7 @@ class DogClassifier:
                 tf.keras.layers.Dense(len(self.breedslist), activation="relu"),
             ]
         )
-        return model
+        return raw_model
 
     def train_model(self, test_mode=False):
         """Performs training of CNN model."""
@@ -366,7 +366,7 @@ class DogClassifier:
         train = dataset.take(take_size)
         val = dataset.skip(take_size)
 
-        model = self.model
+        model = self.raw_model
 
         # Compile the model
         model.compile(
@@ -378,12 +378,11 @@ class DogClassifier:
         # Train the model
         history = model.fit(train, epochs=num_epoch, validation_data=val)
 
-        return model
+        self.model = model
 
-    def save_model(self, filepath="saved_models/whichDog") -> None:
+    def save_model(self, filepath="saved_model/whichDog") -> None:
         """Save the model to the filepath specified"""
-        model = self.train_model()
-        model.save(filepath)
+        self.model.save(filepath)
 
 
 class WhichDog(DogClassifier):
@@ -396,10 +395,6 @@ class WhichDog(DogClassifier):
 
         # if os.path.isfile(model_filepath):
         model = tf.keras.models.load_model(model_filepath)
-        # else:
-        #     super().train_model()
-        #     super().save_model()
-        #     model = tf.keras.models.load_model(model_filepath)
 
         # Load the image to specified target size
         img = tf.keras.preprocessing.image.load_img(img_path, target_size=(224, 224))
@@ -424,7 +419,7 @@ class BigDog(WhichDog):
     def __init__(self, batchsize=32, imgsize=(224, 224)) -> None:
         super().__init__(batchsize, imgsize)
 
-    def predict(self, img_path):
+    def predict_dog(self, img_path, model_filepath="saved_model/whichDog"):
         big_boys = [
             "Rhodesian Ridgeback",
             "Afghan Hound",

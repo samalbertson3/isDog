@@ -52,6 +52,37 @@ Assuming the image contains a dog, determine whether the dog is a Big Boy or a l
     - img_path (str): path to image being predicted. The image must be in .jpg/.jpeg format.
     - model_path (str): path to model  
 
+# Examples
+```
+#################
+# IsDog workflow
+#################
+# creates the model object
+dog_model = IsDog()
+# train the model
+dog_model.train_model()
+# save the model
+dog_model.save_model()
+
+# predict if the image is a dog or not
+dog_model.predict_dog(img_path = "path/to/image/here")
+
+############################
+# Save to your own location
+############################
+# create object
+breed_model = WhichDog()
+#train the model
+breed_model.train_model()
+# save model to desired location
+breed_model.save_model(model_filepath = "path/to/model/here")
+
+# predict the breed of dog in image
+breed_model.predict_dog(img_path = "path/to/image/here", model_path = "path/to/model/here")
+```
+
+The example is for the IsDog classifier, but the same workflow will work for any of the classifiers.
+
 # Testing Module
 
 ## Setup
@@ -66,3 +97,4 @@ In the src folder should be the file "front_end.py".
 
 ### tests
 In the test folder should be the file "test_frontend.py" which contains the tests and a jpg file called "test_dog.jpg", which is the test imaged used in the functions. Please use pytest to run the tests by calling "pytest tests/" in the terminal from the directory that you cloned the repository into. 
+
