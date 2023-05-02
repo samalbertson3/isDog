@@ -1,5 +1,5 @@
 # isDog
-Final project: utilities package for identifying and classifying images of dogs (and not dogs). 
+Final project: utilities package for identifying and classifying images of dogs (and not dogs). For entertainment purposes only!
 
 # Structure
 There are 2 separate convolutional neural networks: one trained on images of both dogs and non-dogs and another trained to identify different breeds of dogs (with no training data that does not contain dogs.)
@@ -60,7 +60,7 @@ Assuming the image contains a dog, determine whether the dog is a Big Boy or a l
 # creates the model object
 dog_model = IsDog()
 # train the model
-dog_model.train_model()
+dog_model.train_model() # this step can take a while!
 # save the model
 dog_model.save_model()
 
@@ -73,7 +73,7 @@ dog_model.predict_dog(img_path = "path/to/image/here")
 # create object
 breed_model = WhichDog()
 #train the model
-breed_model.train_model()
+breed_model.train_model() # this step can take a while!
 # save model to desired location
 breed_model.save_model(model_filepath = "path/to/model/here")
 
