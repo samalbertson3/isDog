@@ -13,9 +13,18 @@ model = VGG16(weights="imagenet")
 
 # Load the Stanford Dogs dataset
 dataset = tfds.load("stanford_dogs", split="test", shuffle_files=False)
+dogs_ds, val_dogs_ds, test_dogs_ds = tfds.load(
+    "stanford_dogs",
+    with_info=False,
+    split=["train[:70%]", "train[70%:]", "test"],
+)
+dogs_ds = dogs_ds.take(1000)
+val_dogs_ds = val_dogs_ds.take(1000)
+test_dogs_ds = test_dogs_ds.take(1000)
 dataset = dataset.take(1000)
 
-function process_dataset(data):
+
+def process_dataset(data):
     # Preprocess and make predictions on the images
     proc_dataset = []
     for example in data:
@@ -27,7 +36,4 @@ function process_dataset(data):
 
     proc_dataset = tf.data.Dataset.from_tensor_slices(proc_dataset)
 
-    return(proc_dataset)
-
-for example in proc_dataset:
-    print(".")
+    return proc_dataset

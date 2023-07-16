@@ -7,22 +7,8 @@ import numpy as np
 from PIL import Image
 import os
 
-
 # https://pythonspot.com/polymorphism/
 # "/Users/ellieanderson/Downloads/golden-retriever.jpg"
-def process_dataset(data):
-    # Preprocess and make predictions on the images
-    proc_dataset = []
-    for example in data:
-        image = example["image"]
-        image = tf.image.resize(image, (224, 224))
-        image = preprocess_input(image)
-        image = tf.expand_dims(image, axis=0)
-        proc_dataset.append(image)
-
-    proc_dataset = tf.data.Dataset.from_tensor_slices(proc_dataset)
-
-    return proc_dataset
 
 
 class IsDog:
