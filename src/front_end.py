@@ -46,12 +46,10 @@ class IsDog:
 
         # Create the final model
         model = tf.keras.Model(inputs=pretrained_model.input, outputs=output)
-        return pretrained_model
+
+        return model
 
     def train_model(self, suppress_print=False, test_mode=False):
-        # Load the Stanford Dogs dataset
-        input_shape = self.input_shape
-        batchsize = self.batchsize
         if test_mode:
             num_epoch = 1
             take_size = 100
@@ -60,6 +58,7 @@ class IsDog:
             take_size = 1000
         if not suppress_print:
             print("Loading dogs...")
+        # Load the Stanford Dogs dataset
         dogs_ds, val_dogs_ds, test_dogs_ds = tfds.load(
             "stanford_dogs",
             with_info=False,
@@ -154,38 +153,12 @@ class IsDog:
         test_dataset = (
             test_dataset.shuffle(1000).batch(self.batchsize).prefetch(tf.data.AUTOTUNE)
         )
-        # dataset = dataset.shuffle(1000).batch(batchsize).prefetch(tf.data.AUTOTUNE)
-        # val_dataset = (
-        #     val_dataset.shuffle(1000).batch(batchsize).prefetch(tf.data.AUTOTUNE)
-        # )
-        # test_dataset = (
-        #     test_dataset.shuffle(1000).batch(batchsize).prefetch(tf.data.AUTOTUNE)
-        # )
 
         if not suppress_print:
             print("Training model...")
+
         # Compile the model
-        # model = self.raw_model
-
-        pretrained_model = tf.keras.applications.VGG16(
-            weights="imagenet", include_top=False, input_shape=input_shape
-        )  # load pre-trained model
-        for layer in pretrained_model.layers:  # freeze pre-trained layers
-            layer.trainable = False
-
-        print("Building model...")
-
-        # Add a new dense layer for classification
-        dense_layer = tf.keras.layers.Dense(256, activation="relu")(
-            pretrained_model.output
-        )
-
-        # Add a binary output layer with sigmoid activation
-        output = tf.keras.layers.Dense(1, activation="sigmoid")(dense_layer)
-
-        # Create the final model
-        model = tf.keras.Model(inputs=pretrained_model.input, outputs=output)
-
+        model = self.raw_model
         model.compile(
             optimizer="adam", loss="binary_crossentropy", metrics=["accuracy"]
         )
