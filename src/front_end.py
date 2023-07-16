@@ -14,40 +14,27 @@ import os
 class IsDog:
     """Determine if an image is of a dog."""
 
-    def __init__(self, input_shape: tuple = (224, 224, 3)) -> None:
+    def __init__(self, input_shape: tuple = (224, 224, 3), batchsize: int = 100) -> None:
         self.input_shape = input_shape
+        self.batchsize = batchsize
 
     @property
     def raw_model(self):
+        pretrained_model = tf.keras.applications.VGG16(weights='imagenet', include_top=False) # load pre-trained model
+        for layer in pretrained_model.layers: # freeze pre-trained layers
+            layer.trainable = False
+        
         print("Building model...")
-        # Create the model
-        raw_model = models.Sequential()
 
-        # Add the convolutional layers
-        raw_model.add(
-            layers.Conv2D(
-                32,
-                (3, 3),
-                input_shape=self.input_shape,
-            )
-        )
-        raw_model.add(layers.MaxPooling2D((2, 2)))
-        raw_model.add(
-            layers.Conv2D(
-                64,
-                (3, 3),
-            )
-        )
-        raw_model.add(layers.MaxPooling2D((2, 2)))
+        # Add a new dense layer for classification
+        dense_layer = tf.keras.layers.Dense(256, activation='relu')(pretrained_model.output)
 
-        # Add the flatten layer
-        raw_model.add(layers.Flatten())
+        # Add a binary output layer with sigmoid activation
+        output = tf.keras.layers.Dense(1, activation='sigmoid')(dense_layer)
 
-        # Add the dense layers
-        raw_model.add(layers.Dense(2048))
-        raw_model.add(layers.Dropout(0.5))
-        raw_model.add(layers.Dense(1, activation="sigmoid"))
-        return raw_model
+        # Create the final model
+        model = tf.keras.Model(inputs=pretrained_model.input, outputs=output)
+        return pretrained_model
 
     def train_model(self, suppress_print=False, test_mode=False):
         # Load the Stanford Dogs dataset
@@ -56,7 +43,7 @@ class IsDog:
             take_size = 100
         else:
             num_epoch = 3
-            take_size = 1000
+            take_size = self.batchsize
         if not suppress_print:
             print("Loading dogs...")
         dogs_ds, val_dogs_ds, test_dogs_ds = tfds.load(
@@ -354,18 +341,26 @@ class DogClassifier:
             take_size = 5000
 
         # Load the dataset
-        dataset, info = tfds.load("stanford_dogs", with_info=True, split="train[:60%]")
+        dataset, val = tfds.load(
+            "stanford_dogs", with_info=False, split=["train[:70%]", "train[70%:]"]
+        )
         # shuffle the dataset so we don't just get a subset of dog breeds
         dataset = dataset.shuffle(1024)
+        val = val.shuffle(1024)
         # Apply preprocessing to the dataset
         dataset = dataset.map(self.preprocess_data)
+        val = val.map(self.preprocess_data)
+
+        # Define the training and validation data
+        dataset = dataset.take(take_size)
+        val = val.take(take_size)
+
         # Batch the dataset
         dataset = dataset.batch(self.batchsize)
         dataset = dataset.prefetch(tf.data.AUTOTUNE)
 
-        # Define the training and validation data
-        train = dataset.take(take_size)
-        val = dataset.skip(take_size)
+        val = val.batch(self.batchsize)
+        val = val.prefetch(tf.data.AUTOTUNE)
 
         model = self.raw_model
 
@@ -377,7 +372,7 @@ class DogClassifier:
         )
 
         # Train the model
-        history = model.fit(train, epochs=num_epoch, validation_data=val)
+        history = model.fit(dataset, epochs=num_epoch, validation_data=val)
 
         self.model = model
 
@@ -542,3 +537,7 @@ class BigDog(WhichDog):
         else:
             dogType = "This dog is neither a Big Boy or a lil guy"
         return dogType
+
+
+model = IsDog(batchsize=360)
+model.train_model()
