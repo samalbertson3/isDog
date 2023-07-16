@@ -13,20 +13,21 @@ model = VGG16(weights="imagenet")
 
 # Load the Stanford Dogs dataset
 dataset = tfds.load("stanford_dogs", split="test", shuffle_files=False)
-dataset = dataset.take(1)  # Take one example from the test split
+dataset = dataset.take(1000)
 
-# Preprocess and make predictions on the image
-for example in dataset:
-    img = example["image"]
-    img = tf.image.resize(img, (224, 224))
-    img = np.expand_dims(img, axis=0)
-    img = preprocess_input(np.copy(img))
+function process_dataset(data):
+    # Preprocess and make predictions on the images
+    proc_dataset = []
+    for example in data:
+        image = example["image"]
+        image = tf.image.resize(image, (224, 224))
+        image = preprocess_input(image)
+        image = tf.expand_dims(image, axis=0)
+        proc_dataset.append(image)
 
-    # Make predictions on the image
-    preds = model.predict(img)
-    decoded_preds = decode_predictions(preds, top=3)[0]  # Get the top 3 predictions
+    proc_dataset = tf.data.Dataset.from_tensor_slices(proc_dataset)
 
-    # Display the predictions
-    print("Predictions:")
-    for _, label, probability in decoded_preds:
-        print(f"{label}: {probability * 100:.2f}%")
+    return(proc_dataset)
+
+for example in proc_dataset:
+    print(".")
