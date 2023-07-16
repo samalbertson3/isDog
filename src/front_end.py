@@ -7,8 +7,14 @@ import numpy as np
 from PIL import Image
 import os
 
+
 # https://pythonspot.com/polymorphism/
 # "/Users/ellieanderson/Downloads/golden-retriever.jpg"
+def preprocess_dataset(example):
+    image = example["image"]
+    image = tf.image.resize(image, (224, 224))
+    image = tf.keras.applications.vgg16.preprocess_input(image)
+    return image
 
 
 class IsDog:
@@ -44,12 +50,14 @@ class IsDog:
 
     def train_model(self, suppress_print=False, test_mode=False):
         # Load the Stanford Dogs dataset
+        input_shape = self.input_shape
+        batchsize = self.batchsize
         if test_mode:
             num_epoch = 1
             take_size = 100
         else:
             num_epoch = 3
-            take_size = self.batchsize
+            take_size = 1000
         if not suppress_print:
             print("Loading dogs...")
         dogs_ds, val_dogs_ds, test_dogs_ds = tfds.load(
@@ -78,15 +86,14 @@ class IsDog:
         if not suppress_print:
             print("Processing dogs...")
         # Preprocess the dog images
-        dogs_ds = dogs_ds.map(
-            lambda x: (tf.image.resize(x["image"], (224, 224)), tf.constant(1))
-        )
-        val_dogs_ds = val_dogs_ds.map(
-            lambda x: (tf.image.resize(x["image"], (224, 224)), tf.constant(1))
-        )
-        test_dogs_ds = test_dogs_ds.map(
-            lambda x: (tf.image.resize(x["image"], (224, 224)), tf.constant(1))
-        )
+        dogs_ds_proc = dogs_ds.map(preprocess_dataset)
+        val_dogs_ds_proc = val_dogs_ds.map(preprocess_dataset)
+        test_dogs_ds_proc = test_dogs_ds.map(preprocess_dataset)
+
+        # Label the dog images
+        dogs_ds = dogs_ds.map(lambda x: ((x, tf.constant(1))))
+        val_dogs_ds = val_dogs_ds.map(lambda x: ((x, tf.constant(1))))
+        test_dogs_ds = test_dogs_ds.map(lambda x: ((x, tf.constant(1))))
 
         if not suppress_print:
             print("Processing non-dogs...")
@@ -96,33 +103,89 @@ class IsDog:
         )  # exclude the "dog" class from Caltech 101
         val_non_dogs_ds = val_non_dogs_ds.filter(lambda x: x["label"] != 37)
         test_non_dogs_ds = test_non_dogs_ds.filter(lambda x: x["label"] != 37)
-        non_dogs_ds = non_dogs_ds.map(
-            lambda x: (tf.image.resize(x["image"], (224, 224)), tf.constant(0))
-        )
-        if not suppress_print:
-            print("Finalizing image processing...")
-        val_non_dogs_ds = val_non_dogs_ds.map(
-            lambda x: (tf.image.resize(x["image"], (224, 224)), tf.constant(0))
-        )
-        test_non_dogs_ds = test_non_dogs_ds.map(
-            lambda x: (tf.image.resize(x["image"], (224, 224)), tf.constant(0))
-        )
+
+        non_dogs_ds_proc = non_dogs_ds.map(preprocess_dataset)
+        val_non_dogs_ds_proc = val_non_dogs_ds.map(preprocess_dataset)
+        test_non_dogs_ds_proc = test_non_dogs_ds.map(preprocess_dataset)
+
+        # Label the dog images
+        non_dogs_ds = non_dogs_ds.map(lambda x: ((x, tf.constant(0))))
+        val_non_dogs_ds = val_non_dogs_ds.map(lambda x: ((x, tf.constant(0))))
+        test_non_dogs_ds = test_non_dogs_ds.map(lambda x: ((x, tf.constant(0))))
 
         if not suppress_print:
             print("Finalizing image processing...")
         # Concatenate the dog and non-dog datasets
-        dataset = dogs_ds.concatenate(non_dogs_ds)
-        val_dataset = val_dogs_ds.concatenate(val_non_dogs_ds)
-        test_dataset = test_dogs_ds.concatenate(test_non_dogs_ds)
+        dataset = tf.data.Dataset.concatenate(dogs_ds_proc, non_dogs_ds_proc)
+        val_dataset = tf.data.Dataset.concatenate(
+            val_dogs_ds_proc, val_non_dogs_ds_proc
+        )
+        test_dataset = tf.data.Dataset.concatenate(
+            test_dogs_ds_proc, test_non_dogs_ds_proc
+        )
+
+        # organize labels
+        target_dataset = dogs_ds.map(lambda _, label: label).concatenate(
+            non_dogs_ds.map(lambda _, label: label)
+        )
+        target_val_dataset = val_dogs_ds.map(lambda _, label: label).concatenate(
+            val_non_dogs_ds.map(lambda _, label: label)
+        )
+        target_test_dataset = test_dogs_ds.map(lambda _, label: label).concatenate(
+            test_non_dogs_ds.map(lambda _, label: label)
+        )
+
+        target_dataset = target_dataset.map(lambda x: tf.reshape(x, shape=(-1, 1)))
+        target_val_dataset = target_val_dataset.map(
+            lambda x: tf.reshape(x, shape=(-1, 1))
+        )
+        target_test_dataset = target_test_dataset.map(
+            lambda x: tf.reshape(x, shape=(-1, 1))
+        )
 
         # Shuffle and batch the dataset
-        dataset = dataset.shuffle(1024).batch(32).prefetch(tf.data.AUTOTUNE)
-        val_dataset = val_dataset.shuffle(1024).batch(32).prefetch(tf.data.AUTOTUNE)
-        test_dataset = test_dataset.shuffle(1024).batch(32).prefetch(tf.data.AUTOTUNE)
+        dataset = tf.data.Dataset.zip((dataset, target_dataset))
+        val_dataset = tf.data.Dataset.zip((val_dataset, target_val_dataset))
+        test_dataset = tf.data.Dataset.zip((test_dataset, target_test_dataset))
+        dataset = dataset.shuffle(1000).batch(self.batchsize).prefetch(tf.data.AUTOTUNE)
+        val_dataset = (
+            val_dataset.shuffle(1000).batch(self.batchsize).prefetch(tf.data.AUTOTUNE)
+        )
+        test_dataset = (
+            test_dataset.shuffle(1000).batch(self.batchsize).prefetch(tf.data.AUTOTUNE)
+        )
+        # dataset = dataset.shuffle(1000).batch(batchsize).prefetch(tf.data.AUTOTUNE)
+        # val_dataset = (
+        #     val_dataset.shuffle(1000).batch(batchsize).prefetch(tf.data.AUTOTUNE)
+        # )
+        # test_dataset = (
+        #     test_dataset.shuffle(1000).batch(batchsize).prefetch(tf.data.AUTOTUNE)
+        # )
+
         if not suppress_print:
             print("Training model...")
         # Compile the model
-        model = self.raw_model
+        # model = self.raw_model
+
+        pretrained_model = tf.keras.applications.VGG16(
+            weights="imagenet", include_top=False, input_shape=input_shape
+        )  # load pre-trained model
+        for layer in pretrained_model.layers:  # freeze pre-trained layers
+            layer.trainable = False
+
+        print("Building model...")
+
+        # Add a new dense layer for classification
+        dense_layer = tf.keras.layers.Dense(256, activation="relu")(
+            pretrained_model.output
+        )
+
+        # Add a binary output layer with sigmoid activation
+        output = tf.keras.layers.Dense(1, activation="sigmoid")(dense_layer)
+
+        # Create the final model
+        model = tf.keras.Model(inputs=pretrained_model.input, outputs=output)
+
         model.compile(
             optimizer="adam", loss="binary_crossentropy", metrics=["accuracy"]
         )
@@ -545,5 +608,5 @@ class BigDog(WhichDog):
         return dogType
 
 
-model = IsDog(batchsize=360)
+model = IsDog(batchsize=32)
 model.train_model()
