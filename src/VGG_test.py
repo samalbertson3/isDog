@@ -1,4 +1,5 @@
 import tensorflow as tf
+import tensorflow_datasets as tfds
 from tensorflow.keras.applications.vgg16 import (
     VGG16,
     preprocess_input,
@@ -10,18 +11,22 @@ import numpy as np
 # Load the pre-trained VGG16 model
 model = VGG16(weights="imagenet")
 
-# Load and preprocess the test image
-img_path = "test.jpg"  # Replace with the path to your test image
-img = image.load_img(img_path, target_size=(224, 224))
-x = image.img_to_array(img)
-x = np.expand_dims(x, axis=0)
-x = preprocess_input(x)
+# Load the Stanford Dogs dataset
+dataset = tfds.load("stanford_dogs", split="test", shuffle_files=False)
+dataset = dataset.take(1)  # Take one example from the test split
 
-# Make predictions on the image
-preds = model.predict(x)
-decoded_preds = decode_predictions(preds, top=3)[0]  # Get the top 3 predictions
+# Preprocess and make predictions on the image
+for example in dataset:
+    img = example["image"]
+    img = tf.image.resize(img, (224, 224))
+    img = np.expand_dims(img, axis=0)
+    img = preprocess_input(np.copy(img))
 
-# Display the predictions
-print("Predictions:")
-for _, label, probability in decoded_preds:
-    print(f"{label}: {probability*100:.2f}%")
+    # Make predictions on the image
+    preds = model.predict(img)
+    decoded_preds = decode_predictions(preds, top=3)[0]  # Get the top 3 predictions
+
+    # Display the predictions
+    print("Predictions:")
+    for _, label, probability in decoded_preds:
+        print(f"{label}: {probability * 100:.2f}%")
