@@ -14,23 +14,29 @@ import os
 class IsDog:
     """Determine if an image is of a dog."""
 
-    def __init__(self, input_shape: tuple = (224, 224, 3), batchsize: int = 100) -> None:
+    def __init__(
+        self, input_shape: tuple = (224, 224, 3), batchsize: int = 100
+    ) -> None:
         self.input_shape = input_shape
         self.batchsize = batchsize
 
     @property
     def raw_model(self):
-        pretrained_model = tf.keras.applications.VGG16(weights='imagenet', include_top=False) # load pre-trained model
-        for layer in pretrained_model.layers: # freeze pre-trained layers
+        pretrained_model = tf.keras.applications.VGG16(
+            weights="imagenet", include_top=False, input_shape=self.input_shape
+        )  # load pre-trained model
+        for layer in pretrained_model.layers:  # freeze pre-trained layers
             layer.trainable = False
-        
+
         print("Building model...")
 
         # Add a new dense layer for classification
-        dense_layer = tf.keras.layers.Dense(256, activation='relu')(pretrained_model.output)
+        dense_layer = tf.keras.layers.Dense(256, activation="relu")(
+            pretrained_model.output
+        )
 
         # Add a binary output layer with sigmoid activation
-        output = tf.keras.layers.Dense(1, activation='sigmoid')(dense_layer)
+        output = tf.keras.layers.Dense(1, activation="sigmoid")(dense_layer)
 
         # Create the final model
         model = tf.keras.Model(inputs=pretrained_model.input, outputs=output)
