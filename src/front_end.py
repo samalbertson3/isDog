@@ -37,7 +37,7 @@ class IsDog:
         print("Building model...")
 
         # Add a new dense layer for classification
-        dense_layer = tf.keras.layers.Dense(256, activation="relu")(
+        dense_layer = tf.keras.layers.Dense(2048, activation="relu")(
             pretrained_model.output
         )
 
