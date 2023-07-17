@@ -165,6 +165,9 @@ class IsDog:
 
         # Train the model
         history = model.fit(dataset, epochs=num_epoch, validation_data=val_dataset)
+
+        if not suppress_print:
+            print("Testing model...")
         results = model.evaluate(test_dataset)
         self.model = model
 
